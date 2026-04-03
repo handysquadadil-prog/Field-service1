@@ -1,15 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>FieldPro — Site Inspection & Estimates</title>
+<title>Handy sQuad — Field Service Management</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.7/signature_pad.umd.min.js"></script>
-<!-- Supabase removed - using localStorage only. Add back supabase CDN if cloud sync needed -->
 <script>
-// Supabase loaded dynamically so it never blocks the app if offline
 (function(){
   const s = document.createElement('script');
   s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
@@ -19,42 +18,83 @@
 })();
 </script>
 <style>
-:root{--orange:#E8570A;--orange-light:#FDF0E8;--orange-mid:#F4924A;--dark:#181511;--dark2:#2C2720;--steel:#4A5568;--steel-light:#EDF2F7;--steel-mid:#A0AEC0;--white:#FAFAF8;--card:#FFFFFF;--border:#E8E3DC;--success:#22543D;--success-bg:#E6FFED;--r:14px;--r-sm:8px;--shadow:0 2px 16px rgba(24,21,17,0.08)}
+:root{
+  --blue:#1A56DB;--blue-light:#EBF5FF;--blue-mid:#4F91F5;--blue-dark:#1e3a5f;
+  --dark:#0F1829;--dark2:#1A2744;--steel:#4A5568;--steel-light:#EDF2F7;--steel-mid:#A0AEC0;
+  --white:#F7FAFF;--card:#FFFFFF;--border:#D1E3F8;
+  --success:#22543D;--success-bg:#E6FFED;--r:14px;--r-sm:8px;
+  --shadow:0 2px 16px rgba(26,86,219,0.10)
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);overflow:hidden}
-#app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto;background:var(--white);position:relative;box-shadow:0 0 80px rgba(0,0,0,0.15)}
+#app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto;background:var(--white);position:relative;box-shadow:0 0 80px rgba(26,86,219,0.13)}
 #topbar{background:var(--dark);color:#fff;padding:14px 20px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-#topbar-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-0.5px}
-#topbar-title span{color:var(--orange)}
+.topbar-logo{display:flex;align-items:center;gap:10px}
+.topbar-logo img{height:32px;width:32px;border-radius:8px;object-fit:cover;background:#1A56DB}
+#topbar-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.5px}
+#topbar-title span{color:var(--blue-mid)}
 .topbar-back{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px;display:none}
 .topbar-back.show{display:flex}
-#topbar-right button{background:none;border:none;color:#fff;cursor:pointer;font-size:20px}
+#topbar-right{display:flex;align-items:center;gap:4px}
+#topbar-right button{background:none;border:none;color:#fff;cursor:pointer;font-size:18px;padding:4px}
+.topbar-user-badge{font-size:11px;color:var(--blue-mid);font-weight:600;padding:3px 8px;background:rgba(26,86,219,0.2);border-radius:100px}
 #content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:64px}
 #nav{background:var(--dark2);display:flex;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:100}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 12px;border:none;background:none;color:rgba(255,255,255,0.45);cursor:pointer;font-size:10px;font-family:'DM Sans',sans-serif}
 .nav-btn .nav-icon{font-size:22px}
-.nav-btn.active{color:var(--orange)}
+.nav-btn.active{color:var(--blue-mid)}
 .nav-btn:active{opacity:0.7}
 .screen{display:none}
 .screen.active{display:block}
+
+/* LOGIN */
+#screen-login{display:flex;flex-direction:column;min-height:100vh;background:linear-gradient(160deg,var(--dark) 0%,var(--dark2) 60%,#1A56DB22 100%)}
+.login-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px}
+.login-logo{width:80px;height:80px;border-radius:20px;object-fit:cover;background:var(--blue);margin-bottom:16px;box-shadow:0 4px 24px rgba(26,86,219,0.4)}
+.login-brand{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;text-align:center;margin-bottom:4px}
+.login-brand span{color:var(--blue-mid)}
+.login-sub{font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:36px;text-align:center}
+.login-card{background:var(--card);border-radius:var(--r);padding:24px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,0.3)}
+.login-card h2{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;color:var(--dark)}
+.login-field{margin-bottom:16px}
+.login-field label{display:block;font-size:13px;font-weight:500;color:var(--steel);margin-bottom:6px}
+.login-field input{display:block;width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:15px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--dark);transition:border-color .2s;-webkit-appearance:none}
+.login-field input:focus{outline:none;border-color:var(--blue)}
+.login-btn{width:100%;padding:15px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);font-size:16px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:4px}
+.login-btn:active{opacity:0.85}
+.login-role-toggle{display:flex;gap:8px;margin-bottom:20px}
+.role-tab{flex:1;padding:10px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--steel);cursor:pointer;transition:all .2s;text-align:center}
+.role-tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.login-error{font-size:13px;color:#c53030;margin-top:10px;text-align:center;display:none}
+.login-error.show{display:block}
+
 /* DASHBOARD */
 #dash-header{background:linear-gradient(135deg,var(--dark) 0%,var(--dark2) 100%);padding:24px 20px 32px}
 .dash-greeting{font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:4px}
 .dash-name{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;color:#fff}
 .dash-date{font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px}
+.dash-role-badge{display:inline-block;margin-top:8px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px;background:rgba(79,145,245,0.2);color:var(--blue-mid)}
 .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 20px;margin-top:-16px}
 .stat-card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
 .stat-label{font-size:11px;color:var(--steel-mid);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--dark)}
-.stat-val.orange{color:var(--orange)}
+.stat-val.blue{color:var(--blue)}
 .stat-sub{font-size:11px;color:var(--steel-mid);margin-top:2px}
 .section-header{display:flex;align-items:center;justify-content:space-between;padding:0 20px 12px}
 .section-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
-.section-action{font-size:13px;color:var(--orange);font-weight:500;background:none;border:none;cursor:pointer;padding:0}
+.section-action{font-size:13px;color:var(--blue);font-weight:500;background:none;border:none;cursor:pointer;padding:0}
 .filter-row{display:flex;gap:8px;padding:0 20px 16px;overflow-x:auto;scrollbar-width:none}
 .filter-row::-webkit-scrollbar{display:none}
 .filter-chip{flex-shrink:0;padding:7px 14px;border-radius:100px;border:1.5px solid var(--border);background:var(--card);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;color:var(--steel)}
-.filter-chip.active{background:var(--orange);border-color:var(--orange);color:#fff;font-weight:500}
+.filter-chip.active{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
+
+/* SEARCH BAR */
+.search-bar-wrap{padding:0 20px 12px}
+.search-bar{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 14px}
+.search-bar input{flex:1;border:none;background:none;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none}
+.search-bar input::placeholder{color:var(--steel-mid)}
+.search-bar span{font-size:16px;color:var(--steel-mid)}
+
 .job-card{background:var(--card);border-radius:var(--r);margin:0 20px 12px;box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:transform .15s}
 .job-card:active{transform:scale(0.98)}
 .job-card-header{display:flex;align-items:center;gap:12px;padding:14px 16px 10px}
@@ -71,7 +111,7 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--white);c
 .empty-icon{font-size:48px;margin-bottom:16px}
 .empty-title{font-family:'Syne',sans-serif;font-size:18px;color:var(--dark);margin-bottom:8px}
 /* FAB */
-.fab{position:fixed;bottom:80px;right:max(20px, calc(50vw - 220px));width:58px;height:58px;border-radius:50%;background:var(--orange);color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 20px rgba(232,87,10,0.45);display:flex;align-items:center;justify-content:center;z-index:90;transition:transform .15s}
+.fab{position:fixed;bottom:80px;right:max(20px, calc(50vw - 220px));width:58px;height:58px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 20px rgba(26,86,219,0.45);display:flex;align-items:center;justify-content:center;z-index:90;transition:transform .15s}
 .fab:active{transform:scale(0.93)}
 /* FORMS */
 .form-screen{padding:20px;padding-bottom:120px}
@@ -80,7 +120,7 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--white);c
 .form-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 label{display:block;font-size:13px;font-weight:500;color:var(--steel);margin-bottom:6px}
 input,select,textarea{display:block;width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:15px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--dark);transition:border-color .2s;-webkit-appearance:none;appearance:none}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--orange)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
 textarea{resize:vertical;min-height:90px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{margin-bottom:16px}
@@ -88,34 +128,33 @@ textarea{resize:vertical;min-height:90px}
 .service-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .service-opt{border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px 8px;text-align:center;cursor:pointer;transition:all .2s;background:var(--card)}
 .service-opt:active{transform:scale(0.95)}
-.service-opt.selected{border-color:var(--orange);background:var(--orange-light)}
+.service-opt.selected{border-color:var(--blue);background:var(--blue-light)}
 .service-opt .s-icon{font-size:24px;margin-bottom:4px}
 .service-opt .s-label{font-size:11px;font-weight:600;color:var(--steel)}
-.service-opt.selected .s-label{color:var(--orange)}
-/* WORK ITEMS */
+.service-opt.selected .s-label{color:var(--blue)}
+/* WORK ITEMS — no rate/pricing col */
 .work-item{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:10px;position:relative}
-.wi-grid{display:grid;grid-template-columns:2fr 0.75fr 0.75fr 1fr;gap:6px;align-items:end}
+.wi-grid{display:grid;grid-template-columns:2fr 0.75fr 0.75fr;gap:6px;align-items:end}
 .wi-grid .field{margin:0}
 .wi-grid label{font-size:10px;margin-bottom:4px}
 .wi-grid input,.wi-grid select{padding:9px 10px;font-size:13px}
 .wi-del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--steel-mid);font-size:17px;cursor:pointer;padding:4px;line-height:1}
 .wi-bottom{display:flex;align-items:center;gap:8px;margin-top:8px}
 .wi-bottom input{flex:1;padding:8px 10px;font-size:12px}
-.wi-amount{font-size:12px;font-weight:700;color:var(--orange);white-space:nowrap;padding:4px 0}
 .add-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:1.5px dashed var(--border);border-radius:var(--r-sm);background:none;cursor:pointer;font-size:14px;font-weight:500;color:var(--steel);font-family:'DM Sans',sans-serif;transition:all .2s}
 .add-btn:active{background:var(--steel-light)}
 /* TEMPLATES */
 .template-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:16px;padding-bottom:2px}
 .template-scroll::-webkit-scrollbar{display:none}
-.tmpl-chip{flex-shrink:0;padding:7px 14px;border-radius:100px;border:1.5px solid var(--orange);background:var(--orange-light);color:var(--orange);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
-.tmpl-chip:active{background:var(--orange);color:#fff}
+.tmpl-chip{flex-shrink:0;padding:7px 14px;border-radius:100px;border:1.5px solid var(--blue);background:var(--blue-light);color:var(--blue);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.tmpl-chip:active{background:var(--blue);color:#fff}
 /* AI BOX */
-.ai-box{background:linear-gradient(135deg,#1A1207 0%,#2D1F0A 100%);border-radius:var(--r);padding:18px;margin-bottom:20px}
-.ai-box-title{font-family:'Syne',sans-serif;font-size:14px;color:var(--orange-mid);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.ai-box{background:linear-gradient(135deg,#0a1122 0%,#0d1f3c 100%);border-radius:var(--r);padding:18px;margin-bottom:20px}
+.ai-box-title{font-family:'Syne',sans-serif;font-size:14px;color:var(--blue-mid);margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .ai-box textarea{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.12);color:#fff;font-size:14px;min-height:80px}
 .ai-box textarea::placeholder{color:rgba(255,255,255,0.3)}
-.ai-box textarea:focus{border-color:var(--orange)}
-.ai-btn{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;width:100%;padding:13px;background:var(--orange);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer}
+.ai-box textarea:focus{border-color:var(--blue)}
+.ai-btn{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer}
 .ai-btn:active{opacity:0.85}
 .ai-btn:disabled{opacity:0.5;cursor:not-allowed}
 /* MATERIALS */
@@ -128,32 +167,29 @@ textarea{resize:vertical;min-height:90px}
 /* ESTIMATE */
 .estimate-box{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);overflow:hidden;margin-bottom:20px}
 .est-row{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border);font-size:14px}
-.est-row:last-child{border-bottom:none;background:var(--orange-light)}
+.est-row:last-child{border-bottom:none;background:var(--blue-light)}
 .est-row .el{color:var(--steel)}
 .est-row .ea{font-weight:600}
 .est-row.total .el{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--dark)}
-.est-row.total .ea{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--orange)}
+.est-row.total .ea{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--blue)}
 /* SIGNATURE */
 .sig-container{border:1.5px solid var(--border);border-radius:var(--r-sm);overflow:hidden;position:relative;background:#fff}
 #sigCanvas{display:block;width:100%;height:160px;touch-action:none}
 .sig-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:var(--steel-mid);pointer-events:none}
-.sig-clear{font-size:13px;color:var(--orange);background:none;border:none;cursor:pointer;padding:8px 0 0}
-/* PHOTOS */
-.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-.photo-thumb{aspect-ratio:1;border-radius:var(--r-sm);object-fit:cover;border:1px solid var(--border);width:100%;cursor:pointer}
-.photo-add{aspect-ratio:1;border-radius:var(--r-sm);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:28px;color:var(--steel-mid);background:var(--card)}
+.sig-clear{font-size:13px;color:var(--blue);background:none;border:none;cursor:pointer;padding:8px 0 0}
 /* GPS */
 .gps-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--steel-light);border:1.5px solid var(--border);border-radius:var(--r-sm);cursor:pointer;font-size:13px;font-weight:500;color:var(--steel);font-family:'DM Sans',sans-serif;margin-top:8px}
 /* BOTTOM */
 .bottom-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-top:1px solid var(--border);padding:12px 20px;display:flex;gap:10px;z-index:80}
-.btn-primary{flex:1;padding:15px;background:var(--orange);color:#fff;border:none;border-radius:var(--r-sm);font-size:16px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer}
+.btn-primary{flex:1;padding:15px;background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);font-size:16px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer}
 .btn-primary:active{opacity:0.85}
 .btn-secondary{padding:15px 20px;background:var(--steel-light);color:var(--dark);border:none;border-radius:var(--r-sm);font-size:15px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer}
-.btn-outline{padding:12px 18px;background:none;color:var(--orange);border:1.5px solid var(--orange);border-radius:var(--r-sm);font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer}
-.btn-outline:active{background:var(--orange-light)}
+.btn-outline{padding:12px 18px;background:none;color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--r-sm);font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer}
+.btn-outline:active{background:var(--blue-light)}
+.btn-danger{padding:12px 18px;background:none;color:#c53030;border:1.5px solid #c53030;border-radius:var(--r-sm);font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer}
 /* DETAIL */
 .detail-header{background:var(--dark);padding:20px;color:#fff}
-.detail-service{font-size:12px;color:var(--orange-mid);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.detail-service{font-size:12px;color:var(--blue-mid);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .detail-customer{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px}
 .detail-loc{font-size:13px;color:rgba(255,255,255,0.5)}
 .detail-meta{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);margin:16px 20px;border-radius:var(--r-sm);overflow:hidden}
@@ -166,39 +202,69 @@ textarea{resize:vertical;min-height:90px}
 .di-row:last-child{border-bottom:none}
 .di-name{font-weight:500;flex:1}
 .di-qty{color:var(--steel-mid);margin:0 8px;font-size:12px;flex-shrink:0}
-.di-price{font-weight:700;color:var(--orange);white-space:nowrap}
 /* LOADING */
-.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(24,21,17,0.6);z-index:200;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,24,41,0.7);z-index:200;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
 .loading-overlay.show{display:flex}
-.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.2);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite}
+.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
 .loading-text{color:#fff;font-size:14px}
 @keyframes spin{to{transform:rotate(360deg)}}
 /* TOAST */
 .toast{position:absolute;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--dark);color:#fff;padding:12px 20px;border-radius:100px;font-size:14px;font-weight:500;opacity:0;transition:all .3s;z-index:300;white-space:nowrap;max-width:90%;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-/* PHOTO VIEWER */
-.photo-viewer{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:250;display:none;align-items:center;justify-content:center}
-.photo-viewer.show{display:flex}
-.photo-viewer img{max-width:95%;max-height:90vh;object-fit:contain;border-radius:var(--r-sm)}
-.pv-close{position:absolute;top:16px;right:16px;font-size:28px;color:#fff;cursor:pointer;background:none;border:none}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+/* Labor description */
+.labor-desc-box{background:var(--blue-light);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:14px 16px;margin-top:8px}
+.labor-desc-box label{color:var(--blue-dark);font-weight:600;font-size:12px;margin-bottom:6px}
+.labor-desc-box textarea{min-height:70px;font-size:13px;background:#fff;border-color:var(--border)}
+.labor-desc-box textarea:focus{border-color:var(--blue)}
 </style>
 </head>
 <body>
 <div id="app">
 
-  <div id="topbar">
-    <div style="display:flex;align-items:center;gap:10px">
-      <button class="topbar-back" id="topbarBack" onclick="goBack()">&#8592;</button>
-      <div id="topbar-title"><span>Field</span>Pro</div>
-    </div>
-    <div id="topbar-right">
-      <button id="sync-btn" onclick="syncFromCloud().then(()=>showToast('Synced from cloud!'))" title="Sync with cloud">☁️</button>
+  <!-- LOGIN SCREEN (shown before app) -->
+  <div id="screen-login" class="screen active" style="display:flex;flex-direction:column;height:100vh;overflow-y:auto">
+    <div class="login-wrap">
+      <img id="login-logo" class="login-logo" src="https://drive.google.com/thumbnail?id=16qA-Ifw_PoX-iBO0kvBIEpm1KcRORP6-&sz=w200" alt="Handy sQuad" onerror="this.style.background='var(--blue)';this.src=''" />
+      <div class="login-brand">Handy <span>sQuad</span></div>
+      <div class="login-sub">Field Service Management</div>
+      <div class="login-card">
+        <div class="login-role-toggle">
+          <button class="role-tab active" id="tab-tech" onclick="setLoginRole('technician')">👷 Technician</button>
+          <button class="role-tab" id="tab-admin" onclick="setLoginRole('admin')">🔐 Admin</button>
+        </div>
+        <h2 id="login-title">Technician Login</h2>
+        <div class="login-field">
+          <label>Your Name</label>
+          <input type="text" id="login-name" placeholder="e.g. Rajan Kumar" autocomplete="username" />
+        </div>
+        <div class="login-field" id="login-password-field" style="display:none">
+          <label>Admin Password</label>
+          <input type="password" id="login-password" placeholder="Enter admin password" autocomplete="current-password" />
+        </div>
+        <div class="login-error" id="login-error">Incorrect password. Please try again.</div>
+        <button class="login-btn" onclick="doLogin()">Sign In →</button>
+      </div>
     </div>
   </div>
 
-  <div id="content">
+  <div id="topbar" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="topbar-back" id="topbarBack" onclick="goBack()">&#8592;</button>
+      <div class="topbar-logo">
+        <img src="https://drive.google.com/thumbnail?id=16qA-Ifw_PoX-iBO0kvBIEpm1KcRORP6-&sz=w200" alt="" onerror="this.style.display='none'" style="height:28px;width:28px;border-radius:6px;object-fit:cover" />
+        <div id="topbar-title"><span>Handy</span> sQuad</div>
+      </div>
+    </div>
+    <div id="topbar-right">
+      <span class="topbar-user-badge" id="topbar-user-badge"></span>
+      <button id="sync-btn" onclick="syncFromCloud().then(()=>showToast('Synced!'))" title="Sync">☁️</button>
+      <button onclick="doLogout()" title="Logout" style="font-size:16px">🚪</button>
+    </div>
+  </div>
+
+  <div id="content" style="display:none">
 
     <!-- DASHBOARD -->
     <div class="screen active" id="screen-dashboard">
@@ -206,6 +272,7 @@ textarea{resize:vertical;min-height:90px}
         <div class="dash-greeting">Welcome back,</div>
         <div class="dash-name" id="dash-emp-name">Field Worker</div>
         <div class="dash-date" id="dash-date"></div>
+        <div class="dash-role-badge" id="dash-role-badge">Technician</div>
       </div>
       <div class="stats-row" id="stats-row"></div>
       <div style="padding:8px 0 0">
@@ -228,6 +295,13 @@ textarea{resize:vertical;min-height:90px}
     <!-- JOBS -->
     <div class="screen" id="screen-jobs">
       <div style="padding:16px 20px 0">
+        <!-- Customer Search -->
+        <div class="search-bar-wrap" style="padding:0 0 12px">
+          <div class="search-bar">
+            <span>🔍</span>
+            <input type="text" id="search-input" placeholder="Search by customer name..." oninput="renderJobList('all')" />
+          </div>
+        </div>
         <div class="filter-row" style="margin:0 -20px;padding:4px 20px 14px">
           <div class="filter-chip active" onclick="filterAll(this,'all')">All</div>
           <div class="filter-chip" onclick="filterAll(this,'draft')">Draft</div>
@@ -242,8 +316,8 @@ textarea{resize:vertical;min-height:90px}
     <div class="screen" id="screen-newjob">
       <div class="form-screen">
         <div class="ai-box">
-          <div class="ai-box-title">&#10022; AI Assistant - Describe the job</div>
-          <textarea id="ai-description" placeholder="E.g. Fix leaking roof on west side, install 3 electrical points in kitchen, weld gate frame 10x5 ft..."></textarea>
+          <div class="ai-box-title">&#10022; AI Assistant — Describe the job</div>
+          <textarea id="ai-description" placeholder="E.g. Fix leaking roof on west side, install 3 electrical points in kitchen..."></textarea>
           <button class="ai-btn" id="ai-btn" onclick="parseWithAI()">&#10022; Parse with AI (Gemini)</button>
         </div>
 
@@ -251,11 +325,10 @@ textarea{resize:vertical;min-height:90px}
           <div class="form-section-title">Technician</div>
           <div class="field">
             <label>Your Name</label>
-            <input type="text" id="f-employee" placeholder="e.g. Rajan Kumar" />
+            <input type="text" id="f-employee" placeholder="e.g. Rajan Kumar" readonly style="background:#f5f8ff;color:var(--blue-dark)" />
           </div>
         </div>
 
-        <!-- CUSTOMER = Individual Person, not a company -->
         <div class="form-section">
           <div class="form-section-title">Customer Details</div>
           <div class="field">
@@ -286,21 +359,17 @@ textarea{resize:vertical;min-height:90px}
           <div class="service-grid" id="service-grid"></div>
         </div>
 
-        <!-- WORK ITEMS with per-item amount -->
+        <!-- WORK ITEMS — no rate/price -->
         <div class="form-section">
           <div class="form-section-title">Work Items</div>
           <div id="template-chips" class="template-scroll"></div>
-          <div style="display:grid;grid-template-columns:2fr 0.75fr 0.75fr 1fr auto;gap:6px;margin-bottom:4px;padding:0 2px">
+          <div style="display:grid;grid-template-columns:2fr 0.75fr 0.75fr auto;gap:6px;margin-bottom:4px;padding:0 2px">
             <span style="font-size:10px;color:var(--steel-mid)">Item Name</span>
             <span style="font-size:10px;color:var(--steel-mid)">Qty</span>
             <span style="font-size:10px;color:var(--steel-mid)">Unit</span>
-            <span style="font-size:10px;color:var(--steel-mid)">Rate (Rs)</span>
             <span></span>
           </div>
           <div id="work-items-list"></div>
-          <div style="display:flex;justify-content:flex-end;font-size:13px;font-weight:700;color:var(--dark);margin:8px 0 12px">
-            Items Total: <span id="wi-total" style="color:var(--orange);margin-left:8px">Rs 0</span>
-          </div>
           <button class="add-btn" onclick="addWorkItem()">+ Add Work Item</button>
         </div>
 
@@ -314,21 +383,29 @@ textarea{resize:vertical;min-height:90px}
         </div>
 
         <div class="form-section">
-          <div class="form-section-title">Labor and Extra Charges</div>
-          <div class="field"><label>Labor Charges (Rs)</label><input type="number" id="f-labor" placeholder="0" oninput="recalc()" /></div>
-          <div class="field"><label>Transportation (Rs)</label><input type="number" id="f-transport" placeholder="0" oninput="recalc()" /></div>
-          <div class="field"><label>Miscellaneous / Extra (Rs)</label><input type="number" id="f-extra" placeholder="0" oninput="recalc()" /></div>
+          <div class="form-section-title">Labor & Extra Charges</div>
+          <div class="field">
+            <label>Labor Charges (Rs)</label>
+            <input type="number" id="f-labor" placeholder="0" oninput="recalc()" />
+          </div>
+          <!-- Labor description: days & workers breakdown -->
+          <div class="labor-desc-box">
+            <label>Labor Description (days / workers / details)</label>
+            <textarea id="f-labor-desc" placeholder="e.g. 2 workers × 3 days @ Rs 600/day = Rs 3600&#10;Includes overtime on Day 2"></textarea>
+          </div>
+          <div class="field" style="margin-top:16px">
+            <label>Transportation (Rs)</label>
+            <input type="number" id="f-transport" placeholder="0" oninput="recalc()" />
+          </div>
+          <div class="field">
+            <label>Miscellaneous / Extra (Rs)</label>
+            <input type="number" id="f-extra" placeholder="0" oninput="recalc()" />
+          </div>
         </div>
 
         <div class="form-section">
           <div class="form-section-title">Estimate Summary</div>
           <div class="estimate-box" id="estimate-box"></div>
-        </div>
-
-        <div class="form-section">
-          <div class="form-section-title">Site Photos</div>
-          <div class="photo-grid" id="photo-grid"><div class="photo-add" onclick="triggerPhoto()">+</div></div>
-          <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotos(event)" />
         </div>
 
         <div class="form-section">
@@ -350,7 +427,7 @@ textarea{resize:vertical;min-height:90px}
 
   </div>
 
-  <div id="nav">
+  <div id="nav" style="display:none">
     <button class="nav-btn active" onclick="navigate('dashboard')" id="nav-dashboard">
       <span class="nav-icon">&#8941;</span><span>Dashboard</span>
     </button>
@@ -362,7 +439,7 @@ textarea{resize:vertical;min-height:90px}
     </button>
   </div>
 
-  <button class="fab" id="fab" onclick="navigate('newjob')">+</button>
+  <button class="fab" id="fab" style="display:none" onclick="navigate('newjob')">+</button>
   <div class="bottom-bar" id="newjob-bar" style="display:none">
     <button class="btn-secondary" onclick="saveJob('draft')">Save Draft</button>
     <button class="btn-primary" onclick="saveJob('sent')">Send Estimate</button>
@@ -375,29 +452,17 @@ textarea{resize:vertical;min-height:90px}
   <div class="toast" id="toast"></div>
 </div>
 
-<div class="photo-viewer" id="photo-viewer">
-  <button class="pv-close" onclick="closePV()">X</button>
-  <img id="pv-img" src="" alt="Site photo" />
-</div>
-
 <script>
 // =================================================================
-//  GEMINI API KEY
-//  1. Go to https://aistudio.google.com/app/apikey
-//  2. Click "Create API Key" (free, no credit card needed)
-//  3. Copy the key and paste it below replacing the placeholder
-//  Free tier limits: 15 requests/min, 1M tokens/day (Gemini 1.5 Flash)
+//  CONFIGURATION
 // =================================================================
 const GEMINI_API_KEY = 'AIzaSyB39IUhL2nihXapttcBuIuKq8F6hvszTts';
-// =================================================================
-// =================================================================
-//  SUPABASE CONFIG
-//  1. Go to https://supabase.com → your project → Settings → API
-//  2. Copy "Project URL" and "anon public" key and paste below
-// =================================================================
-const SUPABASE_URL = 'https://hvocnbscrylrnsloopni.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_qIQM44MJcHAZ4hUfZo6F3A_hCbvCHI6';
-// =================================================================
+const SUPABASE_URL   = 'https://hvocnbscrylrnsloopni.supabase.co';
+const SUPABASE_KEY   = 'sb_publishable_qIQM44MJcHAZ4hUfZo6F3A_hCbvCHI6';
+
+// ── ADMIN PASSWORD ─────────────────────────────────────────────
+// Change this to your desired admin password
+const ADMIN_PASSWORD = 'handysquad@admin2024';
 
 // ── DATA LAYER ─────────────────────────────────────────────────
 const DB = {
@@ -407,6 +472,81 @@ const DB = {
 let jobs   = DB.get('fp_jobs',[]);
 let photos = DB.get('fp_photos',{});
 
+// ── AUTH STATE ─────────────────────────────────────────────────
+let currentUser = null; // {name, role: 'technician'|'admin'}
+let loginRole = 'technician';
+
+function setLoginRole(role){
+  loginRole = role;
+  document.getElementById('tab-tech').classList.toggle('active', role==='technician');
+  document.getElementById('tab-admin').classList.toggle('active', role==='admin');
+  document.getElementById('login-title').textContent = role==='admin' ? 'Admin Login' : 'Technician Login';
+  document.getElementById('login-password-field').style.display = role==='admin' ? 'block' : 'none';
+  document.getElementById('login-error').classList.remove('show');
+}
+
+function doLogin(){
+  const name = document.getElementById('login-name').value.trim();
+  if(!name){ showToastLogin('Please enter your name'); return; }
+  if(loginRole==='admin'){
+    const pwd = document.getElementById('login-password').value;
+    if(pwd !== ADMIN_PASSWORD){
+      document.getElementById('login-error').classList.add('show');
+      return;
+    }
+  }
+  document.getElementById('login-error').classList.remove('show');
+  currentUser = {name, role: loginRole};
+  DB.set('fp_session', currentUser);
+  startApp();
+}
+
+function doLogout(){
+  currentUser = null;
+  DB.set('fp_session', null);
+  // Show login
+  document.getElementById('screen-login').style.display='flex';
+  document.getElementById('topbar').style.display='none';
+  document.getElementById('content').style.display='none';
+  document.getElementById('nav').style.display='none';
+  document.getElementById('fab').style.display='none';
+  document.getElementById('newjob-bar').style.display='none';
+  document.getElementById('login-name').value='';
+  document.getElementById('login-password').value='';
+  setLoginRole('technician');
+}
+
+function showToastLogin(msg){
+  // small inline toast for login screen
+  const el=document.getElementById('login-error');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2000);
+}
+
+function startApp(){
+  document.getElementById('screen-login').style.display='none';
+  document.getElementById('topbar').style.display='flex';
+  document.getElementById('content').style.display='block';
+  document.getElementById('nav').style.display='flex';
+  document.getElementById('fab').style.display='flex';
+
+  document.getElementById('topbar-user-badge').textContent = currentUser.role==='admin'?'👑 Admin':'👷 '+currentUser.name;
+  document.getElementById('f-employee').value = currentUser.name;
+  DB.set('fp_employee', currentUser.name);
+
+  document.getElementById('dash-date').textContent =
+    new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  buildServiceGrid();
+  initSigPad();
+  setDefaults();
+  renderStats();
+  renderJobList('dash');
+  renderJobList('all');
+  recalc();
+  seedDemo();
+  navigate('dashboard');
+}
+
 // ── SUPABASE CLIENT ────────────────────────────────────────────
 let _sb = null;
 function initSupabase(){
@@ -414,19 +554,23 @@ function initSupabase(){
     if(!SUPABASE_URL.startsWith('http') || SUPABASE_KEY.includes('YOUR_')) return;
     _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     console.log('Supabase connected ✓');
-    syncFromCloud(); // pull latest data on load
+    // Only sync if logged in
+    if(currentUser) syncFromCloud();
   } catch(e){ console.warn('Supabase init error:', e.message); }
 }
 
-// Pull all jobs from Supabase → merge into local
 async function syncFromCloud(){
   if(!_sb) return;
   setSyncStatus('syncing');
   try {
-    const {data, error} = await _sb.from('jobs').select('*').order('created_at', {ascending:false});
+    let query = _sb.from('jobs').select('*').order('created_at', {ascending:false});
+    // Technicians only see their own jobs
+    if(currentUser && currentUser.role === 'technician'){
+      query = query.eq('employee_name', currentUser.name);
+    }
+    const {data, error} = await query;
     if(error) throw error;
     if(data && data.length){
-      // Merge: cloud wins for any matching id, keep local-only jobs too
       const cloudIds = new Set(data.map(r=>r.id));
       const localOnly = jobs.filter(j=>!cloudIds.has(j.id));
       jobs = [...data.map(cloudRowToJob), ...localOnly];
@@ -440,7 +584,6 @@ async function syncFromCloud(){
   }
 }
 
-// Convert Supabase row → app job object
 function cloudRowToJob(r){
   return {
     id: r.id,
@@ -455,6 +598,7 @@ function cloudRowToJob(r){
     workItems: r.work_items||[],
     materials: r.materials||[],
     labor: r.labor||0,
+    laborDesc: r.labor_desc||'',
     transport: r.transport||0,
     extra: r.extra||0,
     wiTotal: r.wi_total||0,
@@ -467,7 +611,6 @@ function cloudRowToJob(r){
   };
 }
 
-// Push a single job to Supabase
 async function pushJobToCloud(job){
   if(!_sb) return;
   setSyncStatus('syncing');
@@ -485,6 +628,7 @@ async function pushJobToCloud(job){
       work_items: job.workItems,
       materials: job.materials,
       labor: job.labor,
+      labor_desc: job.laborDesc,
       transport: job.transport,
       extra: job.extra,
       wi_total: job.wiTotal,
@@ -504,18 +648,15 @@ async function pushJobToCloud(job){
   }
 }
 
-// Sync button status indicator
 function setSyncStatus(s){
   const btn = document.getElementById('sync-btn');
   if(!btn) return;
   btn.textContent = s==='syncing'?'⟳': s==='ok'?'☁️': '⚠️';
-  btn.title = s==='syncing'?'Syncing...': s==='ok'?'Synced to cloud': 'Sync failed (offline?)';
 }
 
 const saveAll = () => {
   DB.set('fp_jobs', jobs);
   DB.set('fp_photos', photos);
-  // Auto-sync the most recently modified job to cloud
   if(_sb && jobs.length){
     const latest = [...jobs].sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))[0];
     pushJobToCloud(latest);
@@ -523,7 +664,7 @@ const saveAll = () => {
 };
 
 const SERVICE_TYPES = [
-  {id:'Fabrication',icon:'&#128297;',color:'#FFF3CD',templates:['Steel Frame','Welding','Metal Cutting','Pipe Fitting','Gate / Grill','Railing']},
+  {id:'Fabrication',icon:'&#128297;',color:'#DBEAFE',templates:['Steel Frame','Welding','Metal Cutting','Pipe Fitting','Gate / Grill','Railing']},
   {id:'Roofing',icon:'&#127959;',color:'#D4EDDA',templates:['Sheet Fixing','Waterproofing','Gutter Work','Insulation','Flashing','Skylight']},
   {id:'Electrical',icon:'&#9889;',color:'#CCE5FF',templates:['Wiring','Switch / Socket','DB Board','Fan / Light Point','Earthing','MCB']},
   {id:'Carpentry',icon:'&#129395;',color:'#FFEEBA',templates:['Wardrobe','Door Frame','Window Frame','False Ceiling','TV Unit','Shelving']},
@@ -535,32 +676,25 @@ const SERVICE_TYPES = [
 ];
 const UNITS = ['nos','sq ft','sq m','rft','meter','kg','ton','ltr','bag','set','lot','hrs'];
 
-// ── STATE ──────────────────────────────────────────────────────
 let currentScreen='dashboard', currentJobId=null, editMode=false;
-let selectedSvc=null, workItems=[], materials=[], jobPhotos=[];
+let selectedSvc=null, workItems=[], materials=[];
 let sigPad=null, dashFilter='all', allFilter='all';
 
-// ── INIT ───────────────────────────────────────────────────────
+// ── INIT (check session) ───────────────────────────────────────
 window.onload = ()=>{
-  document.getElementById('dash-date').textContent =
-    new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  const emp = DB.get('fp_employee','');
-  if(emp) document.getElementById('dash-emp-name').textContent = emp;
-  buildServiceGrid();
-  initSigPad();
-  setDefaults();
-  renderStats();
-  renderJobList('dash');
-  renderJobList('all');
-  recalc();
-  seedDemo();
+  const session = DB.get('fp_session', null);
+  if(session && session.name){
+    currentUser = session;
+    startApp();
+  }
+  // Login screen is shown by default (screen-login has active class)
 };
 
 function setDefaults(){
   const now = new Date();
   document.getElementById('f-date').value = now.toISOString().split('T')[0];
   document.getElementById('f-time').value = now.toTimeString().slice(0,5);
-  document.getElementById('f-employee').value = DB.get('fp_employee','');
+  document.getElementById('f-employee').value = currentUser?.name||'';
   addWorkItem(); addMaterial(); recalc();
 }
 
@@ -579,13 +713,13 @@ function initSigPad(){
   canvas.width  = (canvas.offsetWidth||440)*ratio;
   canvas.height = 160*ratio;
   canvas.getContext('2d').scale(ratio,ratio);
-  sigPad = new SignaturePad(canvas,{penColor:'#181511',backgroundColor:'rgb(255,255,255)',minWidth:1.5,maxWidth:3});
+  sigPad = new SignaturePad(canvas,{penColor:'#0F1829',backgroundColor:'rgb(255,255,255)',minWidth:1.5,maxWidth:3});
   sigPad.addEventListener('beginStroke',()=>{ document.getElementById('sig-hint').style.display='none'; });
 }
 
 // ── NAVIGATION ─────────────────────────────────────────────────
 function navigate(screen, jobId){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('#content .screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('nav-'+screen)?.classList.add('active');
   currentScreen = screen;
@@ -594,7 +728,7 @@ function navigate(screen, jobId){
   const fab=document.getElementById('fab');
   const bar=document.getElementById('newjob-bar');
   const nav=document.getElementById('nav');
-  titleEl.innerHTML='<span>Field</span>Pro';
+  titleEl.innerHTML='<span>Handy</span> sQuad';
   backBtn.classList.remove('show');
   fab.style.display='none'; bar.style.display='none'; nav.style.display='flex';
 
@@ -622,25 +756,31 @@ function navigate(screen, jobId){
 function goBack(){ navigate('dashboard'); editMode=false; currentJobId=null; }
 
 // ── DASHBOARD ──────────────────────────────────────────────────
+function getVisibleJobs(){
+  if(currentUser?.role==='admin') return jobs;
+  return jobs.filter(j=>j.employeeName===currentUser?.name);
+}
+
 function renderStats(){
-  const total   = jobs.length;
-  const revenue = jobs.filter(j=>j.status==='approved').reduce((a,j)=>a+(j.grandTotal||0),0);
-  const pending = jobs.filter(j=>j.status==='draft'||j.status==='sent').length;
+  const myJobs = getVisibleJobs();
+  const total   = myJobs.length;
+  const revenue = myJobs.filter(j=>j.status==='approved').reduce((a,j)=>a+(j.grandTotal||0),0);
+  const pending = myJobs.filter(j=>j.status==='draft'||j.status==='sent').length;
   const now=new Date();
-  const monthly = jobs.filter(j=>{ const d=new Date(j.createdAt); return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); }).length;
+  const monthly = myJobs.filter(j=>{ const d=new Date(j.createdAt); return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); }).length;
   document.getElementById('stats-row').innerHTML=`
     <div class="stat-card"><div class="stat-label">Total Jobs</div><div class="stat-val">${total}</div><div class="stat-sub">All time</div></div>
-    <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-val orange">Rs ${fmtINR(revenue)}</div><div class="stat-sub">Approved</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-val blue">Rs ${fmtINR(revenue)}</div><div class="stat-sub">Approved</div></div>
     <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-val">${pending}</div><div class="stat-sub">Open estimates</div></div>
     <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-val">${monthly}</div><div class="stat-sub">Jobs</div></div>`;
-  const emp=document.getElementById('f-employee').value||DB.get('fp_employee','Field Worker');
-  document.getElementById('dash-emp-name').textContent=emp||'Field Worker';
+  document.getElementById('dash-emp-name').textContent = currentUser?.name||'Field Worker';
+  document.getElementById('dash-role-badge').textContent = currentUser?.role==='admin' ? '👑 Admin — All Jobs' : '👷 Technician';
 }
 
 function fmtINR(n){ return Number(n||0).toLocaleString('en-IN'); }
 
 function renderJobList(target){
-  let list=[...jobs].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  let list = [...getVisibleJobs()].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
   let el;
   if(target==='dash'){
     el=document.getElementById('job-list');
@@ -649,9 +789,12 @@ function renderJobList(target){
   } else {
     el=document.getElementById('all-job-list');
     if(allFilter!=='all') list=list.filter(j=>j.status===allFilter);
+    // Customer name search
+    const q = (document.getElementById('search-input')?.value||'').toLowerCase().trim();
+    if(q) list=list.filter(j=>(j.customerName||'').toLowerCase().includes(q));
   }
   if(!list.length){
-    el.innerHTML=`<div class="empty-state"><div class="empty-icon">&#128203;</div><div class="empty-title">No jobs yet</div><div style="font-size:14px;color:var(--steel-mid)">Tap + to create your first job</div></div>`;
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">&#128203;</div><div class="empty-title">No jobs found</div><div style="font-size:14px;color:var(--steel-mid)">Tap + to create your first job</div></div>`;
     return;
   }
   el.innerHTML=list.map(j=>jobCardHTML(j)).join('');
@@ -665,13 +808,13 @@ function jobCardHTML(j){
       <div class="job-type-badge" style="background:${svc.color}">${svc.icon}</div>
       <div class="job-card-info">
         <div class="job-card-customer">${j.customerName||'Unnamed'}</div>
-        <div class="job-card-location">&#128205; ${j.location||'No location'} &middot; ${j.serviceType}</div>
+        <div class="job-card-location">&#128205; ${j.location||'No location'} &middot; ${j.serviceType}${currentUser?.role==='admin'?' &middot; '+j.employeeName:''}</div>
       </div>
     </div>
     <div class="job-card-footer">
       <span class="job-status status-${j.status}">${j.status.charAt(0).toUpperCase()+j.status.slice(1)}</span>
       <span style="font-size:11px;color:var(--steel-mid)">${new Date(j.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span>
-      <span style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">Rs ${fmtINR(j.grandTotal)}</span>
+      <span style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--blue)">Rs ${fmtINR(j.grandTotal)}</span>
     </div>
   </div>`;
 }
@@ -695,20 +838,18 @@ function selectSvc(id){
 }
 function applyTemplate(name){ addWorkItem(name); }
 
-// ── WORK ITEMS (with per-item amount = qty x rate) ─────────────
+// ── WORK ITEMS (no rate/pricing — just qty & unit) ──────────────
 function addWorkItem(name=''){
-  workItems.push({id:uid(),name,qty:'',unit:'nos',rate:'',notes:''});
+  workItems.push({id:uid(),name,qty:'',unit:'nos',notes:''});
   renderWorkItems();
 }
 function removeWorkItem(id){
   workItems=workItems.filter(w=>w.id!==id);
-  renderWorkItems(); recalc();
+  renderWorkItems();
 }
 function renderWorkItems(){
   const el=document.getElementById('work-items-list');
-  el.innerHTML=workItems.map(w=>{
-    const amt=(parseFloat(w.qty)||0)*(parseFloat(w.rate)||0);
-    return `
+  el.innerHTML=workItems.map(w=>`
     <div class="work-item" id="wi-${w.id}">
       <button class="wi-del" onclick="removeWorkItem('${w.id}')">x</button>
       <div class="wi-grid">
@@ -720,7 +861,7 @@ function renderWorkItems(){
         <div class="field">
           <label>Qty</label>
           <input type="number" value="${w.qty}" placeholder="0"
-            oninput="updateWI('${w.id}','qty',this.value);recalc()" />
+            oninput="updateWI('${w.id}','qty',this.value)" />
         </div>
         <div class="field">
           <label>Unit</label>
@@ -728,19 +869,12 @@ function renderWorkItems(){
             ${UNITS.map(u=>`<option ${u===w.unit?'selected':''}>${u}</option>`).join('')}
           </select>
         </div>
-        <div class="field">
-          <label>Rate (Rs)</label>
-          <input type="number" value="${w.rate}" placeholder="0"
-            oninput="updateWI('${w.id}','rate',this.value);recalc()" />
-        </div>
       </div>
       <div class="wi-bottom">
         <input type="text" value="${esc(w.notes)}" placeholder="Notes (optional)"
           oninput="updateWI('${w.id}','notes',this.value)" />
-        <div class="wi-amount">= Rs ${fmtINR(amt.toFixed(0))}</div>
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 }
 function updateWI(id,key,val){ const w=workItems.find(x=>x.id===id); if(w) w[key]=val; }
 
@@ -771,25 +905,20 @@ function updateMat(id,key,val){ const m=materials.find(x=>x.id===id); if(m) m[ke
 
 // ── ESTIMATE CALC ──────────────────────────────────────────────
 function recalc(){
-  const wiTotal  = workItems.reduce((a,w)=>a+(parseFloat(w.qty)||0)*(parseFloat(w.rate)||0),0);
   const matTotal = materials.reduce((a,m)=>a+(parseFloat(m.qty)||0)*(parseFloat(m.unitPrice)||0),0);
   const labor    = parseFloat(document.getElementById('f-labor')?.value)||0;
   const transport= parseFloat(document.getElementById('f-transport')?.value)||0;
   const extra    = parseFloat(document.getElementById('f-extra')?.value)||0;
-  const grand    = wiTotal+matTotal+labor+transport+extra;
-
-  const wiTotalEl=document.getElementById('wi-total');
-  if(wiTotalEl) wiTotalEl.textContent='Rs '+fmtINR(wiTotal.toFixed(0));
+  const grand    = matTotal+labor+transport+extra;
 
   const el=document.getElementById('estimate-box');
   if(el) el.innerHTML=`
-    <div class="est-row"><span class="el">Work Items</span><span class="ea">Rs ${fmtINR(wiTotal.toFixed(0))}</span></div>
     <div class="est-row"><span class="el">Materials</span><span class="ea">Rs ${fmtINR(matTotal.toFixed(0))}</span></div>
     <div class="est-row"><span class="el">Labor</span><span class="ea">Rs ${fmtINR(labor)}</span></div>
     <div class="est-row"><span class="el">Transportation</span><span class="ea">Rs ${fmtINR(transport)}</span></div>
     <div class="est-row"><span class="el">Misc / Extra</span><span class="ea">Rs ${fmtINR(extra)}</span></div>
     <div class="est-row total"><span class="el">Grand Total</span><span class="ea">Rs ${fmtINR(grand.toFixed(0))}</span></div>`;
-  return {wiTotal,matTotal,labor,transport,extra,grand};
+  return {wiTotal:0, matTotal, labor, transport, extra, grand};
 }
 
 // ── GPS ────────────────────────────────────────────────────────
@@ -806,27 +935,10 @@ function getGPS(){
   },()=>showToast('Could not get location'));
 }
 
-// ── PHOTOS ─────────────────────────────────────────────────────
-function triggerPhoto(){ document.getElementById('photo-input').click(); }
-function handlePhotos(e){
-  Array.from(e.target.files).forEach(f=>{
-    const r=new FileReader();
-    r.onload=ev=>{ jobPhotos.push(ev.target.result); renderPhotos(); };
-    r.readAsDataURL(f);
-  });
-}
-function renderPhotos(){
-  const g=document.getElementById('photo-grid');
-  g.innerHTML=jobPhotos.map((src,i)=>`<img class="photo-thumb" src="${src}" onclick="openPV(${i})" />`).join('');
-  g.innerHTML+=`<div class="photo-add" onclick="triggerPhoto()">+</div>`;
-}
-function openPV(i){ document.getElementById('pv-img').src=jobPhotos[i]; document.getElementById('photo-viewer').classList.add('show'); }
-function closePV(){ document.getElementById('photo-viewer').classList.remove('show'); }
-
 // ── SIGNATURE ──────────────────────────────────────────────────
 function clearSig(){ sigPad.clear(); document.getElementById('sig-hint').style.display='block'; }
 
-// ── AI (GEMINI 1.5 FLASH) ─────────────────────────────────────
+// ── AI (GEMINI) ────────────────────────────────────────────────
 async function parseWithAI(){
   const desc=document.getElementById('ai-description').value.trim();
   if(!desc){ showToast('Please describe the job first'); return; }
@@ -835,64 +947,37 @@ async function parseWithAI(){
   }
   showLoading('AI is parsing your job...');
   document.getElementById('ai-btn').disabled=true;
-
-  // ── Gemini 1.5 Flash REST call ────────────────────────────
-  // Endpoint: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
-  // Docs: https://ai.google.dev/gemini-api/docs/quickstart
-  // Replace model with "gemini-1.5-pro" for higher accuracy (lower rate limit)
   const endpoint=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-  const prompt=`You are a field service cost estimator in India. Parse the job description below.
-Return ONLY valid JSON - no markdown code fences, no explanation text before or after.
+  const prompt=`You are a field service estimator in India. Parse the job description below.
+Return ONLY valid JSON - no markdown code fences.
 
 Job description: "${desc}"
 
-Service types (pick best match): ${SERVICE_TYPES.map(s=>s.id).join(', ')}
-Units to use: ${UNITS.join(', ')}
+Service types: ${SERVICE_TYPES.map(s=>s.id).join(', ')}
+Units: ${UNITS.join(', ')}
 
-JSON structure to return:
+JSON structure:
 {
-  "serviceType": "one of the service types listed above",
-  "customerHint": "customer name if mentioned in description, else empty string",
-  "locationHint": "location/address if mentioned, else empty string",
-  "workItems": [
-    {
-      "name": "work item name",
-      "qty": "quantity as string number",
-      "unit": "unit from the list",
-      "rate": "estimated rate per unit in Indian Rupees as string number",
-      "notes": "additional detail or empty string"
-    }
-  ],
-  "materials": [
-    {
-      "name": "material name",
-      "qty": "quantity as string number",
-      "unitPrice": "price per unit in INR as string number"
-    }
-  ],
-  "laborEstimate": "estimated total labor cost in INR as string number",
-  "transportEstimate": "estimated transport cost in INR as string number"
+  "serviceType": "one of the service types",
+  "customerHint": "customer name if mentioned else empty",
+  "locationHint": "location if mentioned else empty",
+  "workItems": [{"name":"","qty":"","unit":"","notes":""}],
+  "materials": [{"name":"","qty":"","unitPrice":""}],
+  "laborEstimate": "estimated total labor cost in INR as string",
+  "laborDesc": "description of labor like 2 workers x 3 days",
+  "transportEstimate": "estimated transport in INR as string"
 }`;
-
   try {
     const res = await fetch(endpoint, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        contents:[{parts:[{text:prompt}]}],
-        generationConfig:{temperature:0.2,maxOutputTokens:1200}
-      })
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:1200}})
     });
     const data = await res.json();
     if(data.error){ throw new Error(data.error.message); }
-
-    // Extract text from Gemini response structure
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    // Strip any accidental markdown fences
     const cleaned = rawText.replace(/```json|```/g,'').trim();
     const parsed  = JSON.parse(cleaned);
-
     if(parsed.serviceType) selectSvc(parsed.serviceType);
     if(parsed.customerHint&&!document.getElementById('f-customer').value)
       document.getElementById('f-customer').value=parsed.customerHint;
@@ -907,6 +992,7 @@ JSON structure to return:
       renderMaterials();
     }
     if(parsed.laborEstimate)     document.getElementById('f-labor').value=parsed.laborEstimate;
+    if(parsed.laborDesc)         document.getElementById('f-labor-desc').value=parsed.laborDesc;
     if(parsed.transportEstimate) document.getElementById('f-transport').value=parsed.transportEstimate;
     recalc();
     showToast('Job parsed by AI!');
@@ -921,10 +1007,8 @@ JSON structure to return:
 // ── SAVE JOB ───────────────────────────────────────────────────
 function saveJob(status='draft'){
   syncWI(); syncMat();
-  const emp=document.getElementById('f-employee').value.trim();
-  if(emp) DB.set('fp_employee',emp);
-  const {wiTotal,matTotal,labor,transport,extra,grand}=recalc();
-
+  const emp = currentUser?.name||document.getElementById('f-employee').value.trim();
+  const {matTotal,labor,transport,extra,grand}=recalc();
   const id = currentJobId||('job_'+Date.now());
   const job = {
     id, employeeName:emp,
@@ -937,13 +1021,13 @@ function saveJob(status='draft'){
     time:document.getElementById('f-time').value,
     workItems:workItems.map(w=>({...w})),
     materials:materials.map(m=>({...m})),
-    labor,transport,extra,wiTotal,matTotal,grandTotal:grand,
+    labor, laborDesc:document.getElementById('f-labor-desc').value.trim(),
+    transport, extra, wiTotal:0, matTotal, grandTotal:grand,
     signature:!sigPad.isEmpty()?sigPad.toDataURL():null,
     status,
     createdAt:editMode?(jobs.find(j=>j.id===currentJobId)?.createdAt||new Date().toISOString()):new Date().toISOString(),
     updatedAt:new Date().toISOString()
   };
-  photos[id]=[...jobPhotos];
   if(editMode){ const i=jobs.findIndex(j=>j.id===currentJobId); if(i>=0) jobs[i]=job; }
   else jobs.unshift(job);
   saveAll(); editMode=false; currentJobId=null;
@@ -958,8 +1042,7 @@ function syncWI(){
     if(ins[0]) w.name=ins[0].value;
     if(ins[1]) w.qty=ins[1].value;
     if(sel)    w.unit=sel.value;
-    if(ins[2]) w.rate=ins[2].value;
-    if(ins[3]) w.notes=ins[3].value;
+    if(ins[2]) w.notes=ins[2].value;
   });
 }
 function syncMat(){
@@ -975,8 +1058,8 @@ function syncMat(){
 // ── RESET FORM ─────────────────────────────────────────────────
 function resetForm(){
   editMode=false; currentJobId=null; selectedSvc=null;
-  workItems=[]; materials=[]; jobPhotos=[];
-  ['f-customer','f-phone','f-email','f-location','f-labor','f-transport','f-extra']
+  workItems=[]; materials=[];
+  ['f-customer','f-phone','f-email','f-location','f-labor','f-labor-desc','f-transport','f-extra']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('ai-description').value='';
   document.querySelectorAll('.service-opt').forEach(e=>e.classList.remove('selected'));
@@ -984,47 +1067,47 @@ function resetForm(){
   const now=new Date();
   document.getElementById('f-date').value=now.toISOString().split('T')[0];
   document.getElementById('f-time').value=now.toTimeString().slice(0,5);
-  document.getElementById('f-employee').value=DB.get('fp_employee','');
+  document.getElementById('f-employee').value=currentUser?.name||'';
   if(sigPad){ sigPad.clear(); document.getElementById('sig-hint').style.display='block'; }
-  renderPhotos(); addWorkItem(); addMaterial(); recalc();
+  addWorkItem(); addMaterial(); recalc();
 }
 
 // ── JOB DETAIL ─────────────────────────────────────────────────
 function renderDetail(jobId){
   const job=jobs.find(j=>j.id===jobId);
   if(!job){ navigate('dashboard'); return; }
+  // Technicians can only see their own jobs
+  if(currentUser?.role==='technician' && job.employeeName !== currentUser.name){
+    navigate('dashboard'); return;
+  }
   const svc=SERVICE_TYPES.find(s=>s.id===job.serviceType)||SERVICE_TYPES[SERVICE_TYPES.length-1];
-  const jPhotos=photos[jobId]||[];
 
-  // Work items rows with amount
-  const wiRows=(job.workItems||[]).map(w=>{
-    const amt=(parseFloat(w.qty)||0)*(parseFloat(w.rate)||0);
-    return `<div class="di-row">
+  const wiRows=(job.workItems||[]).map(w=>`
+    <div class="di-row">
       <span class="di-name">${w.name||'—'}</span>
-      <span class="di-qty">${w.qty} ${w.unit}${w.rate?' @ Rs'+fmtINR(w.rate):''}${w.notes?' | '+w.notes:''}</span>
-      <span class="di-price">${amt?'Rs '+fmtINR(amt.toFixed(0)):''}</span>
-    </div>`;
-  }).join('')||'<p style="font-size:13px;color:var(--steel-mid)">None</p>';
+      <span class="di-qty">${w.qty} ${w.unit}${w.notes?' | '+w.notes:''}</span>
+    </div>`).join('')||'<p style="font-size:13px;color:var(--steel-mid)">None</p>';
 
   const matRows=(job.materials||[]).filter(m=>m.name).map(m=>{
     const amt=(parseFloat(m.qty)||0)*(parseFloat(m.unitPrice)||0);
     return `<div class="di-row">
       <span class="di-name">${m.name}</span>
       <span class="di-qty">${m.qty} x Rs${fmtINR(m.unitPrice)}</span>
-      <span class="di-price">Rs ${fmtINR(amt.toFixed(0))}</span>
+      <span style="font-weight:700;color:var(--blue)">Rs ${fmtINR(amt.toFixed(0))}</span>
     </div>`;
   }).join('')||'<p style="font-size:13px;color:var(--steel-mid)">None</p>';
-
-  const photoHtml=jPhotos.length
-    ?`<div class="photo-grid">${jPhotos.map((s,i)=>`<img class="photo-thumb" src="${s}" onclick="openPVd(${i},'${jobId}')" />`).join('')}</div>`
-    :'<p style="font-size:13px;color:var(--steel-mid)">No photos</p>';
 
   const sigHtml=job.signature
     ?`<img src="${job.signature}" style="max-width:200px;border:1px solid var(--border);border-radius:var(--r-sm)" />`
     :'<p style="font-size:13px;color:var(--steel-mid)">No signature</p>';
 
-  const sc=job.status==='approved'?'rgba(34,84,61,0.3)':job.status==='sent'?'rgba(43,108,176,0.3)':'rgba(160,174,192,0.2)';
+  const sc=job.status==='approved'?'rgba(34,84,61,0.3)':job.status==='sent'?'rgba(26,86,219,0.2)':'rgba(160,174,192,0.2)';
   const tc=job.status==='approved'?'#68D391':job.status==='sent'?'#90CDF4':'#A0AEC0';
+
+  // Delete button only for admin
+  const deleteBtn = currentUser?.role==='admin'
+    ? `<button class="btn-danger" onclick="deleteJob('${job.id}')">Delete</button>`
+    : '';
 
   document.getElementById('detail-content').innerHTML=`
     <div class="detail-header">
@@ -1045,25 +1128,23 @@ function renderDetail(jobId){
     <div class="detail-section">
       <h3>Cost Summary</h3>
       <div class="estimate-box">
-        <div class="est-row"><span class="el">Work Items</span><span class="ea">Rs ${fmtINR((job.wiTotal||0).toFixed(0))}</span></div>
         <div class="est-row"><span class="el">Materials</span><span class="ea">Rs ${fmtINR((job.matTotal||0).toFixed(0))}</span></div>
-        <div class="est-row"><span class="el">Labor</span><span class="ea">Rs ${fmtINR(job.labor||0)}</span></div>
+        <div class="est-row"><span class="el">Labor Charges</span><span class="ea">Rs ${fmtINR(job.labor||0)}</span></div>
+        ${job.laborDesc?`<div class="est-row" style="background:#f0f7ff;flex-direction:column;align-items:flex-start;gap:4px"><span class="el" style="font-size:11px;color:var(--blue)">Labor Details</span><span style="font-size:12px;color:var(--steel);white-space:pre-line">${esc(job.laborDesc)}</span></div>`:''}
         <div class="est-row"><span class="el">Transportation</span><span class="ea">Rs ${fmtINR(job.transport||0)}</span></div>
         <div class="est-row"><span class="el">Misc / Extra</span><span class="ea">Rs ${fmtINR(job.extra||0)}</span></div>
         <div class="est-row total"><span class="el">Grand Total</span><span class="ea">Rs ${fmtINR((job.grandTotal||0).toFixed(0))}</span></div>
       </div>
     </div>
-    <div class="detail-section"><h3>Site Photos</h3>${photoHtml}</div>
     <div class="detail-section"><h3>Customer Signature</h3>${sigHtml}</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;padding:0 20px;margin-bottom:32px">
       <button class="btn-outline" onclick="editJob('${job.id}')">Edit</button>
       ${job.status!=='approved'?`<button class="btn-outline" onclick="markApproved('${job.id}')">Approve</button>`:''}
+      ${deleteBtn}
       <button class="btn-primary" style="flex:1;min-width:120px" onclick="generatePDF('${job.id}')">Download PDF</button>
     </div>
     <div style="height:20px"></div>`;
 }
-
-function openPVd(i,jobId){ const a=photos[jobId]||[]; document.getElementById('pv-img').src=a[i]||''; document.getElementById('photo-viewer').classList.add('show'); }
 
 function editJob(id){
   const job=jobs.find(j=>j.id===id); if(!job) return;
@@ -1076,6 +1157,7 @@ function editJob(id){
   document.getElementById('f-date').value=job.date||'';
   document.getElementById('f-time').value=job.time||'';
   document.getElementById('f-labor').value=job.labor||'';
+  document.getElementById('f-labor-desc').value=job.laborDesc||'';
   document.getElementById('f-transport').value=job.transport||'';
   document.getElementById('f-extra').value=job.extra||'';
   selectedSvc=job.serviceType;
@@ -1085,8 +1167,7 @@ function editJob(id){
   document.getElementById('template-chips').innerHTML=(s?.templates||[]).map(t=>`<div class="tmpl-chip" onclick="applyTemplate('${t.replace(/'/g,"\\'")}'">${t}</div>`).join('');
   workItems=(job.workItems||[]).map(w=>({...w,id:uid()}));
   materials=(job.materials||[]).map(m=>({...m,id:uid()}));
-  jobPhotos=[...(photos[id]||[])];
-  renderWorkItems(); renderMaterials(); renderPhotos(); recalc();
+  renderWorkItems(); renderMaterials(); recalc();
   if(sigPad) sigPad.clear();
   navigate('newjob');
 }
@@ -1096,9 +1177,16 @@ function markApproved(id){
   job.status='approved'; saveAll(); renderDetail(id); showToast('Job approved!');
 }
 
+function deleteJob(id){
+  if(!confirm('Delete this job permanently?')) return;
+  jobs=jobs.filter(j=>j.id!==id);
+  saveAll();
+  if(_sb){ _sb.from('jobs').delete().eq('id',id).then(()=>{}); }
+  showToast('Job deleted');
+  navigate('dashboard');
+}
+
 // ── PDF GENERATION ─────────────────────────────────────────────
-// Uses Rs prefix instead of Rupee symbol to avoid jsPDF encoding issues.
-// The Rs symbol renders correctly across all PDF viewers without font embedding.
 async function generatePDF(jobId){
   const job=jobs.find(j=>j.id===jobId); if(!job) return;
   showLoading('Generating PDF...');
@@ -1109,24 +1197,24 @@ async function generatePDF(jobId){
     let y=M;
     const svc=SERVICE_TYPES.find(s=>s.id===job.serviceType)||SERVICE_TYPES[SERVICE_TYPES.length-1];
 
-    // Header bar
-    doc.setFillColor(24,21,17);
+    // Header bar — blue
+    doc.setFillColor(26,86,219);
     doc.rect(0,0,W,36,'F');
-    doc.setFontSize(24); doc.setFont('helvetica','bold'); doc.setTextColor(232,87,10);
-    doc.text('FieldPro',M,18);
-    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(200,190,180);
-    doc.text('Field Service Estimate Report',M,27);
-    doc.setTextColor(180,160,140);
-    doc.text(job.serviceType+' Service',W-M,18,{align:'right'});
-    doc.text(new Date(job.createdAt).toLocaleDateString('en-IN'),W-M,27,{align:'right'});
+    doc.setFontSize(22); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+    doc.text('Handy sQuad',M,20);
+    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(200,220,255);
+    doc.text('Field Service Estimate Report',M,28);
+    doc.setTextColor(180,210,255);
+    doc.text(job.serviceType+' Service',W-M,20,{align:'right'});
+    doc.text(new Date(job.createdAt).toLocaleDateString('en-IN'),W-M,28,{align:'right'});
     y=46;
 
     // Customer block
-    doc.setFillColor(253,240,232);
+    doc.setFillColor(235,245,255);
     doc.roundedRect(M,y,W-2*M,32,3,3,'F');
-    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(160,120,80);
+    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(26,86,219);
     doc.text('CUSTOMER',M+4,y+7);
-    doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(24,21,17);
+    doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(15,24,41);
     doc.text(String(job.customerName||'—').substring(0,40),M+4,y+16);
     doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,100);
     if(job.phone) doc.text('Ph: '+String(job.phone),M+4,y+24);
@@ -1137,23 +1225,22 @@ async function generatePDF(jobId){
     doc.text('Status: '+job.status.toUpperCase(),W-M-4,y+28,{align:'right'});
     y+=40;
 
-    // Table drawing helper
     function drawTable(title,headers,rows,colW,aligns){
       if(y>250){ doc.addPage(); y=18; }
-      doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(24,21,17);
+      doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(15,24,41);
       doc.text(title,M,y); y+=5;
-      doc.setFillColor(44,39,32);
+      doc.setFillColor(26,86,219);
       doc.rect(M,y,W-2*M,7,'F');
       let cx=M+2;
       headers.forEach((h,i)=>{
-        doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(220,200,180);
+        doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
         doc.text(h,aligns[i]==='right'?cx+colW[i]-2:cx,y+5,{align:aligns[i]});
         cx+=colW[i];
       });
       y+=7;
       rows.forEach((row,ri)=>{
         if(y>272){ doc.addPage(); y=18; }
-        if(ri%2===0){ doc.setFillColor(250,248,245); doc.rect(M,y,W-2*M,7,'F'); }
+        if(ri%2===0){ doc.setFillColor(245,249,255); doc.rect(M,y,W-2*M,7,'F'); }
         cx=M+2;
         row.forEach((cell,i)=>{
           doc.setFontSize(8.5); doc.setFont('helvetica','normal'); doc.setTextColor(30,25,20);
@@ -1166,13 +1253,10 @@ async function generatePDF(jobId){
       y+=5;
     }
 
-    // Work items table
+    // Work items table (no rate/amount cols)
     if(job.workItems?.length){
-      const rows=job.workItems.map(w=>{
-        const amt=(parseFloat(w.qty)||0)*(parseFloat(w.rate)||0);
-        return [w.name||'',String(w.qty||''),w.unit||'',w.rate?'Rs '+fmtINR(parseFloat(w.rate)):'—',amt?'Rs '+fmtINR(amt.toFixed(0)):'—',w.notes||''];
-      });
-      drawTable('WORK ITEMS',['Item Name','Qty','Unit','Rate','Amount','Notes'],rows,[52,16,16,28,28,42],['left','right','left','right','right','left']);
+      const rows=job.workItems.map(w=>[w.name||'',String(w.qty||''),w.unit||'',w.notes||'']);
+      drawTable('WORK ITEMS',['Item Name','Qty','Unit','Notes'],rows,[70,20,20,72],['left','right','left','left']);
     }
 
     // Materials table
@@ -1188,10 +1272,9 @@ async function generatePDF(jobId){
     if(y>240){ doc.addPage(); y=18; }
 
     // Cost summary
-    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(24,21,17);
+    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(15,24,41);
     doc.text('COST SUMMARY',M,y); y+=5;
     const summaryLines=[
-      ['Work Items Total','Rs '+fmtINR((job.wiTotal||0).toFixed(0))],
       ['Materials Total','Rs '+fmtINR((job.matTotal||0).toFixed(0))],
       ['Labor Charges','Rs '+fmtINR(job.labor||0)],
       ['Transportation','Rs '+fmtINR(job.transport||0)],
@@ -1201,10 +1284,17 @@ async function generatePDF(jobId){
       doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
       doc.text(lbl,M+4,y+5);
       doc.text(val,W-M-4,y+5,{align:'right'});
-      doc.setDrawColor(220,215,210); doc.line(M,y+7,W-M,y+7);
+      doc.setDrawColor(210,225,245); doc.line(M,y+7,W-M,y+7);
       y+=9;
     });
-    doc.setFillColor(232,87,10);
+    // Labor description
+    if(job.laborDesc){
+      doc.setFontSize(8); doc.setFont('helvetica','italic'); doc.setTextColor(26,86,219);
+      const lines=doc.splitTextToSize('Labor Details: '+job.laborDesc,W-2*M-8);
+      lines.forEach(l=>{ doc.text(l,M+4,y+5); y+=5; });
+      y+=4;
+    }
+    doc.setFillColor(26,86,219);
     doc.roundedRect(M,y,W-2*M,12,2,2,'F');
     doc.setTextColor(255,255,255); doc.setFontSize(12); doc.setFont('helvetica','bold');
     doc.text('GRAND TOTAL',M+4,y+8);
@@ -1213,7 +1303,7 @@ async function generatePDF(jobId){
 
     // Signature
     if(y<265){
-      doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(24,21,17);
+      doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(15,24,41);
       doc.text('CUSTOMER SIGNATURE',M,y); y+=4;
       doc.setDrawColor(200,200,200); doc.rect(M,y,65,22);
       if(job.signature){
@@ -1228,12 +1318,12 @@ async function generatePDF(jobId){
     }
 
     // Footer
-    doc.setFillColor(24,21,17);
+    doc.setFillColor(15,24,41);
     doc.rect(0,285,W,12,'F');
-    doc.setTextColor(140,130,120); doc.setFontSize(8); doc.setFont('helvetica','normal');
-    doc.text('Generated by FieldPro - Professional Field Service Management',W/2,292,{align:'center'});
+    doc.setTextColor(100,140,200); doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text('Generated by Handy sQuad - Professional Field Service Management',W/2,292,{align:'center'});
 
-    const fname='FieldPro_'+String(job.customerName||'estimate').replace(/[^a-zA-Z0-9]/g,'_')+'_'+(job.date||'na')+'.pdf';
+    const fname='HandySquad_'+String(job.customerName||'estimate').replace(/[^a-zA-Z0-9]/g,'_')+'_'+(job.date||'na')+'.pdf';
     doc.save(fname);
     showToast('PDF downloaded!');
   } catch(err){
@@ -1258,9 +1348,9 @@ function showToast(msg){
 function seedDemo(){
   if(jobs.length>0) return;
   jobs=[
-    {id:'d1',employeeName:'Rajan K.',customerName:'Mr. Suresh Patel',phone:'98765 43210',email:'',location:'42 Gandhi Nagar, Trivandrum',serviceType:'Electrical',date:'2026-03-28',time:'09:30',workItems:[{id:'w1',name:'3-phase Wiring',qty:'1',unit:'lot',rate:'4500',notes:'full house'},{id:'w2',name:'MCB Panel',qty:'1',unit:'nos',rate:'2200',notes:'32A'}],materials:[{id:'m1',name:'Copper Wire 4mm',qty:'80',unitPrice:'55'},{id:'m2',name:'MCB 32A',qty:'4',unitPrice:'280'}],labor:3000,transport:800,extra:0,wiTotal:6700,matTotal:5520,grandTotal:16020,status:'approved',createdAt:'2026-03-28T09:30:00Z',updatedAt:'2026-03-28T09:30:00Z',signature:null},
-    {id:'d2',employeeName:'Priya S.',customerName:'Mrs. Lakshmi Menon',phone:'91234 56789',email:'',location:'Villa 7, Palm Grove, Kochi',serviceType:'Roofing',date:'2026-03-30',time:'10:00',workItems:[{id:'w3',name:'GI Sheet Fixing',qty:'600',unit:'sq ft',rate:'18',notes:'galvanized'},{id:'w4',name:'Waterproofing',qty:'600',unit:'sq ft',rate:'12',notes:'bitumen'}],materials:[{id:'m3',name:'GI Sheets',qty:'35',unitPrice:'780'},{id:'m4',name:'Bitumen Compound',qty:'8',unitPrice:'620'}],labor:8000,transport:1500,extra:500,wiTotal:18000,matTotal:32260,grandTotal:60260,status:'sent',createdAt:'2026-03-30T10:00:00Z',updatedAt:'2026-03-30T10:00:00Z',signature:null},
-    {id:'d3',employeeName:'Rajan K.',customerName:'Mr. Arun Thomas',phone:'99887 76655',email:'',location:'TC 12/4, Kowdiar, Trivandrum',serviceType:'Carpentry',date:'2026-04-01',time:'08:00',workItems:[{id:'w5',name:'Sliding Wardrobe',qty:'3',unit:'nos',rate:'8500',notes:'6ft with mirror'},{id:'w6',name:'TV Unit',qty:'1',unit:'nos',rate:'6000',notes:'wall mount'}],materials:[{id:'m5',name:'Marine Plywood 19mm',qty:'12',unitPrice:'2200'},{id:'m6',name:'Hardware Fittings',qty:'3',unitPrice:'650'}],labor:7000,transport:1200,extra:300,wiTotal:31500,matTotal:28350,grandTotal:68350,status:'draft',createdAt:'2026-04-01T08:00:00Z',updatedAt:'2026-04-01T08:00:00Z',signature:null}
+    {id:'d1',employeeName:currentUser?.name||'Rajan K.',customerName:'Mr. Suresh Patel',phone:'98765 43210',email:'',location:'42 Gandhi Nagar, Trivandrum',serviceType:'Electrical',date:'2026-03-28',time:'09:30',workItems:[{id:'w1',name:'3-phase Wiring',qty:'1',unit:'lot',notes:'full house'},{id:'w2',name:'MCB Panel',qty:'1',unit:'nos',notes:'32A'}],materials:[{id:'m1',name:'Copper Wire 4mm',qty:'80',unitPrice:'55'},{id:'m2',name:'MCB 32A',qty:'4',unitPrice:'280'}],labor:3000,laborDesc:'2 workers x 3 days @ Rs 500/day',transport:800,extra:0,wiTotal:0,matTotal:5520,grandTotal:9320,status:'approved',createdAt:'2026-03-28T09:30:00Z',updatedAt:'2026-03-28T09:30:00Z',signature:null},
+    {id:'d2',employeeName:currentUser?.name||'Rajan K.',customerName:'Mrs. Lakshmi Menon',phone:'91234 56789',email:'',location:'Villa 7, Palm Grove, Kochi',serviceType:'Roofing',date:'2026-03-30',time:'10:00',workItems:[{id:'w3',name:'GI Sheet Fixing',qty:'600',unit:'sq ft',notes:'galvanized'},{id:'w4',name:'Waterproofing',qty:'600',unit:'sq ft',notes:'bitumen'}],materials:[{id:'m3',name:'GI Sheets',qty:'35',unitPrice:'780'},{id:'m4',name:'Bitumen Compound',qty:'8',unitPrice:'620'}],labor:8000,laborDesc:'4 workers x 5 days @ Rs 400/day',transport:1500,extra:500,wiTotal:0,matTotal:32260,grandTotal:42260,status:'sent',createdAt:'2026-03-30T10:00:00Z',updatedAt:'2026-03-30T10:00:00Z',signature:null},
+    {id:'d3',employeeName:currentUser?.name||'Rajan K.',customerName:'Mr. Arun Thomas',phone:'99887 76655',email:'',location:'TC 12/4, Kowdiar, Trivandrum',serviceType:'Carpentry',date:'2026-04-01',time:'08:00',workItems:[{id:'w5',name:'Sliding Wardrobe',qty:'3',unit:'nos',notes:'6ft with mirror'},{id:'w6',name:'TV Unit',qty:'1',unit:'nos',notes:'wall mount'}],materials:[{id:'m5',name:'Marine Plywood 19mm',qty:'12',unitPrice:'2200'},{id:'m6',name:'Hardware Fittings',qty:'3',unitPrice:'650'}],labor:7000,laborDesc:'2 workers x 4 days @ Rs 700/day + material fitting charges',transport:1200,extra:300,wiTotal:0,matTotal:28350,grandTotal:36850,status:'draft',createdAt:'2026-04-01T08:00:00Z',updatedAt:'2026-04-01T08:00:00Z',signature:null}
   ];
   saveAll(); renderStats(); renderJobList('dash'); renderJobList('all');
 }
