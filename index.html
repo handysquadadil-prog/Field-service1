@@ -536,7 +536,8 @@ let photos = DB.get('fp_photos',{});
 
 // ── AUTH STATE ─────────────────────────────────────────────────
 let currentUser = null; // {name, role: 'technician'|'admin'}
-let loginRole = 'technician';
+let loginRole   = 'technician';
+let _pendingLoginName = '';
 
 function setLoginRole(role){
   loginRole = role;
@@ -547,12 +548,53 @@ function setLoginRole(role){
   document.getElementById('login-error').classList.remove('show');
 }
 
-function doLogin(){
+// ── TECHNICIAN PASSWORD — stored in Supabase `technician_passwords` ──
+// Falls back to localStorage if Supabase not yet loaded (rare race condition).
+
+async function getTechPassword(name){
+  const key = name.toLowerCase();
+  // Try Supabase first
+  if(_sb){
+    try {
+      const {data,error} = await _sb
+        .from('technician_passwords')
+        .select('password_hash')
+        .eq('name_key', key)
+        .single();
+      if(!error && data) return data.password_hash;
+      if(error && error.code !== 'PGRST116') console.warn('pw fetch err', error.message);
+    } catch(e){ console.warn('pw fetch exception', e); }
+  }
+  // Fallback: localStorage (for offline or first open before Supabase loads)
+  const local = DB.get('fp_tech_passwords', {});
+  return local[key] || null;
+}
+
+async function saveTechPassword(name, pwd){
+  const key = name.toLowerCase();
+  // Save to Supabase
+  if(_sb){
+    try {
+      const {error} = await _sb
+        .from('technician_passwords')
+        .upsert({ name_key: key, password_hash: pwd, updated_at: new Date().toISOString() });
+      if(error) console.warn('pw save err', error.message);
+    } catch(e){ console.warn('pw save exception', e); }
+  }
+  // Also mirror to localStorage so offline login works on this device
+  const local = DB.get('fp_tech_passwords', {});
+  local[key] = pwd;
+  DB.set('fp_tech_passwords', local);
+}
+
+// Called when the login button is tapped
+async function doLogin(){
   const name = document.getElementById('login-name').value.trim();
   if(!name){ showToastLogin('Please enter your name'); return; }
   document.getElementById('login-error').classList.remove('show');
 
-  if(loginRole==='admin'){
+  // ── Admin path ──
+  if(loginRole === 'admin'){
     const pwd = document.getElementById('login-password').value;
     if(pwd !== ADMIN_PASSWORD){
       document.getElementById('login-error').classList.add('show');
@@ -564,52 +606,60 @@ function doLogin(){
     return;
   }
 
-  // Technician — check if they have a saved password
-  const techPasswords = DB.get('fp_tech_passwords', {});
-  const savedPwd = techPasswords[name.toLowerCase()];
+  // ── Technician path — look up password in Supabase ──
+  showLoading('Checking account…');
+  _pendingLoginName = name;
+
+  // Make sure Supabase is initialised before we try
+  if(!_sb) _tryInitSupabaseEarly();
+
+  const savedPwd = await getTechPassword(name);
+  hideLoading();
 
   if(!savedPwd){
-    // First time — show setup modal
-    _pendingLoginName = name;
+    // First time on any device — show setup modal
     document.getElementById('setup-name-label').textContent = name;
-    document.getElementById('setup-pwd1').value='';
-    document.getElementById('setup-pwd2').value='';
-    document.getElementById('setup-error').style.display='none';
+    document.getElementById('setup-pwd1').value = '';
+    document.getElementById('setup-pwd2').value = '';
+    document.getElementById('setup-error').style.display = 'none';
     document.getElementById('setup-modal').classList.add('show');
   } else {
-    // Returning — show password prompt
-    _pendingLoginName = name;
+    // Password exists in cloud — prompt for it
     document.getElementById('pwd-name-label').textContent = name;
-    document.getElementById('pwd-input').value='';
-    document.getElementById('pwd-error').style.display='none';
+    document.getElementById('pwd-input').value = '';
+    document.getElementById('pwd-error').style.display = 'none';
     document.getElementById('pwd-modal').classList.add('show');
-    setTimeout(()=>document.getElementById('pwd-input').focus(),300);
+    setTimeout(()=>document.getElementById('pwd-input').focus(), 300);
   }
 }
 
-let _pendingLoginName = '';
-
-function confirmSetupPassword(){
+async function confirmSetupPassword(){
   const p1 = document.getElementById('setup-pwd1').value;
   const p2 = document.getElementById('setup-pwd2').value;
   const errEl = document.getElementById('setup-error');
   if(p1.length < 4){ errEl.textContent='Password must be at least 4 characters.'; errEl.style.display='block'; return; }
   if(p1 !== p2){ errEl.textContent='Passwords do not match.'; errEl.style.display='block'; return; }
-  const techPasswords = DB.get('fp_tech_passwords', {});
-  techPasswords[_pendingLoginName.toLowerCase()] = p1;
-  DB.set('fp_tech_passwords', techPasswords);
+
+  errEl.style.display='none';
+  showLoading('Saving password…');
+  await saveTechPassword(_pendingLoginName, p1);
+  hideLoading();
+
   document.getElementById('setup-modal').classList.remove('show');
   currentUser = {name: _pendingLoginName, role:'technician'};
   DB.set('fp_session', currentUser);
   startApp();
 }
 
-function confirmTechPassword(){
+async function confirmTechPassword(){
   const pwd = document.getElementById('pwd-input').value;
-  const techPasswords = DB.get('fp_tech_passwords', {});
-  const savedPwd = techPasswords[_pendingLoginName.toLowerCase()];
-  if(pwd !== savedPwd){
-    document.getElementById('pwd-error').style.display='block';
+  // Re-fetch from cloud in case password was changed on another device
+  showLoading('Verifying…');
+  const savedPwd = await getTechPassword(_pendingLoginName);
+  hideLoading();
+
+  if(!savedPwd || pwd !== savedPwd){
+    document.getElementById('pwd-error').style.display = 'block';
     return;
   }
   document.getElementById('pwd-modal').classList.remove('show');
@@ -621,6 +671,15 @@ function confirmTechPassword(){
 function closePwdModal(){
   document.getElementById('pwd-modal').classList.remove('show');
   _pendingLoginName = '';
+}
+
+// Supabase may not be loaded yet when login screen appears — try init early
+function _tryInitSupabaseEarly(){
+  try {
+    if(window.supabase && SUPABASE_URL.startsWith('http') && !SUPABASE_KEY.includes('YOUR_')){
+      _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+  } catch(e){}
 }
 
 function doLogout(){
@@ -670,42 +729,87 @@ function startApp(){
   // instead of exiting the app
   history.replaceState({screen:'dashboard', jobId:null}, '');
   _renderScreen('dashboard');
-}
+  // If Supabase already loaded, subscribe now; otherwise initSupabase will do it
+  if(_sb){ syncFromCloud(); subscribeRealtime(); }
 
 // ── SUPABASE CLIENT ────────────────────────────────────────────
 let _sb = null;
+let _realtimeSub = null;
+
 function initSupabase(){
   try {
     if(!SUPABASE_URL.startsWith('http') || SUPABASE_KEY.includes('YOUR_')) return;
     _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     console.log('Supabase connected ✓');
-    // Only sync if logged in
-    if(currentUser) syncFromCloud();
+    if(currentUser){
+      syncFromCloud();
+      subscribeRealtime();
+    }
   } catch(e){ console.warn('Supabase init error:', e.message); }
 }
 
+// ── REAL-TIME SUBSCRIPTION ─────────────────────────────────────
+// Listens for INSERT / UPDATE / DELETE from any device and applies
+// changes immediately without a full refresh.
+function subscribeRealtime(){
+  if(!_sb || _realtimeSub) return;
+  _realtimeSub = _sb
+    .channel('jobs-changes')
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'jobs' },
+      (payload) => {
+        const { eventType, new: row, old } = payload;
+        if(eventType === 'DELETE'){
+          jobs = jobs.filter(j => j.id !== old.id);
+        } else {
+          // INSERT or UPDATE — only apply if this user can see it
+          const job = cloudRowToJob(row);
+          if(currentUser?.role === 'technician' && job.employeeName !== currentUser.name) return;
+          const idx = jobs.findIndex(j => j.id === job.id);
+          if(idx >= 0) jobs[idx] = job;
+          else jobs.unshift(job);
+        }
+        DB.set('fp_jobs', jobs);
+        renderStats();
+        renderJobList('dash');
+        renderJobList('all');
+        // If detail screen is open for this job, refresh it too
+        if(currentScreen === 'detail' && currentJobId){
+          renderDetail(currentJobId);
+        }
+        setSyncStatus('ok');
+      }
+    )
+    .subscribe((status) => {
+      console.log('Realtime status:', status);
+    });
+}
+
+// ── FULL PULL FROM CLOUD ───────────────────────────────────────
 async function syncFromCloud(){
-  if(!_sb) return;
+  if(!_sb){ showToast('Not connected to cloud'); return; }
   setSyncStatus('syncing');
   try {
     let query = _sb.from('jobs').select('*').order('created_at', {ascending:false});
-    // Technicians only see their own jobs
-    if(currentUser && currentUser.role === 'technician'){
+    if(currentUser?.role === 'technician'){
       query = query.eq('employee_name', currentUser.name);
     }
     const {data, error} = await query;
     if(error) throw error;
-    if(data && data.length){
-      const cloudIds = new Set(data.map(r=>r.id));
-      const localOnly = jobs.filter(j=>!cloudIds.has(j.id));
-      jobs = [...data.map(cloudRowToJob), ...localOnly];
-      DB.set('fp_jobs', jobs);
-      renderStats(); renderJobList('dash'); renderJobList('all');
-    }
+
+    const cloudJobs = (data||[]).map(cloudRowToJob);
+    const cloudIds  = new Set(cloudJobs.map(j=>j.id));
+    // Keep local-only jobs (not yet pushed), merge with cloud
+    const localOnly = jobs.filter(j=>!cloudIds.has(j.id));
+    jobs = [...cloudJobs, ...localOnly];
+    DB.set('fp_jobs', jobs);
+    renderStats(); renderJobList('dash'); renderJobList('all');
     setSyncStatus('ok');
+    showToast('✓ Synced from cloud');
   } catch(e){
     console.warn('Cloud pull failed:', e.message);
     setSyncStatus('error');
+    showToast('Sync failed: ' + e.message);
   }
 }
 
@@ -736,8 +840,9 @@ function cloudRowToJob(r){
   };
 }
 
+// ── PUSH A SINGLE JOB ──────────────────────────────────────────
 async function pushJobToCloud(job){
-  if(!_sb) return;
+  if(!_sb) return false;
   setSyncStatus('syncing');
   try {
     const {error} = await _sb.from('jobs').upsert({
@@ -762,30 +867,36 @@ async function pushJobToCloud(job){
       signature: job.signature,
       status: job.status,
       created_at: job.createdAt,
-      updated_at: job.updatedAt
+      updated_at: new Date().toISOString()   // always fresh timestamp
     });
     if(error) throw error;
     setSyncStatus('ok');
+    return true;
   } catch(e){
     console.warn('Cloud push failed:', e.message);
     setSyncStatus('error');
     showToast('⚠️ Saved locally — cloud sync failed');
+    return false;
   }
+}
+
+// ── DELETE FROM CLOUD ──────────────────────────────────────────
+async function deleteJobFromCloud(id){
+  if(!_sb) return;
+  try { await _sb.from('jobs').delete().eq('id', id); } catch(e){}
 }
 
 function setSyncStatus(s){
   const btn = document.getElementById('sync-btn');
   if(!btn) return;
   btn.textContent = s==='syncing'?'⟳': s==='ok'?'☁️': '⚠️';
+  btn.title = s==='syncing'?'Syncing…': s==='ok'?'Live — synced': 'Sync failed';
 }
 
+// ── SAVE ALL (local + cloud) ────────────────────────────────────
 const saveAll = () => {
   DB.set('fp_jobs', jobs);
   DB.set('fp_photos', photos);
-  if(_sb && jobs.length){
-    const latest = [...jobs].sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))[0];
-    pushJobToCloud(latest);
-  }
 };
 
 const SERVICE_TYPES = [
@@ -1195,7 +1306,7 @@ JSON structure:
 }
 
 // ── SAVE JOB ───────────────────────────────────────────────────
-function saveJob(status='draft'){
+async function saveJob(status='draft'){
   syncWI(); syncMat();
   const emp = currentUser?.name||document.getElementById('f-employee').value.trim();
   const {matTotal,labor,transport,extra,grand}=recalc();
@@ -1220,9 +1331,17 @@ function saveJob(status='draft'){
   };
   if(editMode){ const i=jobs.findIndex(j=>j.id===currentJobId); if(i>=0) jobs[i]=job; }
   else jobs.unshift(job);
-  saveAll(); editMode=false; currentJobId=null;
-  showToast(status==='draft'?'Saved as draft':'Estimate sent!');
-  navigate('dashboard');
+  saveAll();
+  editMode=false; currentJobId=null;
+  // Push to cloud immediately — real-time will update other devices
+  const pushed = await pushJobToCloud(job);
+  showToast(pushed
+    ? (status==='draft'?'✓ Saved & synced':'✓ Sent & synced')
+    : (status==='draft'?'Saved locally (offline)':'Sent locally (offline)')
+  );
+  _renderScreen('dashboard');
+  history.replaceState({screen:'dashboard'}, '');
+  renderStats(); renderJobList('dash');
 }
 
 function syncWI(){
@@ -1368,16 +1487,21 @@ function editJob(id){
 
 function markApproved(id){
   const job=jobs.find(j=>j.id===id); if(!job) return;
-  job.status='approved'; saveAll(); renderDetail(id); showToast('Job approved!');
+  job.status='approved';
+  job.updatedAt=new Date().toISOString();
+  saveAll();
+  pushJobToCloud(job);  // sync approval to all devices immediately
+  renderDetail(id);
+  showToast('✓ Job approved & synced!');
 }
 
 function deleteJob(id){
   if(!confirm('Delete this job permanently?')) return;
   jobs=jobs.filter(j=>j.id!==id);
   saveAll();
-  if(_sb){ _sb.from('jobs').delete().eq('id',id).then(()=>{}); }
+  deleteJobFromCloud(id);
   showToast('Job deleted');
-  navigate('dashboard');
+  _doGoBack();
 }
 
 // ── PDF GENERATION ─────────────────────────────────────────────
