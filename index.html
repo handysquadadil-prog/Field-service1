@@ -238,13 +238,13 @@ textarea{resize:vertical;min-height:90px}
   <!-- LOGIN SCREEN (shown before app) -->
   <div id="screen-login" class="screen active" style="display:flex;flex-direction:column;height:100vh;overflow-y:auto">
     <div class="login-wrap">
-      <img id="login-logo" class="login-logo" src="https://drive.google.com/thumbnail?id=16qA-Ifw_PoX-iBO0kvBIEpm1KcRORP6-&sz=w200" alt="Handy sQuad" onerror="this.style.background='var(--blue)';this.src=''" />
+      <img id="login-logo" class="login-logo" src="https://drive.google.com/thumbnail?id=16qA-Ifw_PoX-iBO0kvBIEpm1KcRORP6-&sz=w200" alt="Handy sQuad" onerror="this.style.background='var(--blue)';this.src=''" onclick="logoTap()" />
       <div class="login-brand">Handy <span>sQuad</span></div>
       <div class="login-sub">Field Service Management</div>
       <div class="login-card">
         <div class="login-role-toggle">
           <button class="role-tab active" id="tab-tech" onclick="setLoginRole('technician')">👷 Technician</button>
-          <button class="role-tab" id="tab-admin" onclick="setLoginRole('admin')">🔐 Admin</button>
+          <button class="role-tab" id="tab-admin" onclick="setLoginRole('admin')" style="display:none">🔐 Admin</button>
         </div>
         <h2 id="login-title">Technician Login</h2>
         <div class="login-field">
@@ -539,12 +539,31 @@ let currentUser = null; // {name, role: 'technician'|'admin'}
 let loginRole   = 'technician';
 let _pendingLoginName = '';
 
+// Secret tap counter — tap logo 5 times to reveal admin tab
+let _logoTaps = 0, _logoTimer = null;
+function logoTap(){
+  _logoTaps++;
+  clearTimeout(_logoTimer);
+  _logoTimer = setTimeout(()=>{ _logoTaps=0; }, 2000);
+  if(_logoTaps >= 5){
+    _logoTaps = 0;
+    const adminTab = document.getElementById('tab-admin');
+    adminTab.style.display = 'block';
+    setLoginRole('admin');
+    showToastLogin('Admin mode unlocked');
+  }
+}
+
 function setLoginRole(role){
   loginRole = role;
   document.getElementById('tab-tech').classList.toggle('active', role==='technician');
   document.getElementById('tab-admin').classList.toggle('active', role==='admin');
   document.getElementById('login-title').textContent = role==='admin' ? 'Admin Login' : 'Technician Login';
   document.getElementById('login-password-field').style.display = role==='admin' ? 'block' : 'none';
+  // Hide admin tab again when switching back to technician
+  if(role==='technician'){
+    document.getElementById('tab-admin').style.display='none';
+  }
   document.getElementById('login-error').classList.remove('show');
 }
 
@@ -725,12 +744,11 @@ function startApp(){
   renderJobList('all');
   recalc();
   seedDemo();
-  // Seed a base history entry so the first back gesture hits popstate
-  // instead of exiting the app
   history.replaceState({screen:'dashboard', jobId:null}, '');
   _renderScreen('dashboard');
-  // If Supabase already loaded, subscribe now; otherwise initSupabase will do it
+  // If Supabase already loaded by this point, kick off sync
   if(_sb){ syncFromCloud(); subscribeRealtime(); }
+}
 
 // ── SUPABASE CLIENT ────────────────────────────────────────────
 let _sb = null;
@@ -738,7 +756,7 @@ let _realtimeSub = null;
 
 function initSupabase(){
   try {
-    if(!SUPABASE_URL.startsWith('http') || SUPABASE_KEY.includes('YOUR_')) return;
+    if(!SUPABASE_URL.startsWith('http') || !SUPABASE_KEY || SUPABASE_KEY.length < 20) return;
     _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     console.log('Supabase connected ✓');
     if(currentUser){
