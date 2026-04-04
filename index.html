@@ -666,7 +666,10 @@ function startApp(){
   renderJobList('all');
   recalc();
   seedDemo();
-  navigate('dashboard');
+  // Seed a base history entry so the first back gesture hits popstate
+  // instead of exiting the app
+  history.replaceState({screen:'dashboard', jobId:null}, '');
+  _renderScreen('dashboard');
 }
 
 // ── SUPABASE CLIENT ────────────────────────────────────────────
@@ -840,7 +843,22 @@ function initSigPad(){
 }
 
 // ── NAVIGATION ─────────────────────────────────────────────────
+// We use history.pushState so the mobile back gesture fires popstate
+// instead of closing the app or navigating away.
+
 function navigate(screen, jobId){
+  _renderScreen(screen, jobId);
+  // Push a history entry for any screen that has a back button,
+  // so the OS back gesture hits popstate instead of quitting the app.
+  if(screen === 'newjob' || screen === 'detail'){
+    history.pushState({screen, jobId: jobId||null}, '');
+  } else {
+    // For dashboard/jobs, replace so we don't stack entries
+    history.replaceState({screen, jobId: null}, '');
+  }
+}
+
+function _renderScreen(screen, jobId){
   document.querySelectorAll('#content .screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('nav-'+screen)?.classList.add('active');
@@ -875,16 +893,48 @@ function navigate(screen, jobId){
   }
   document.getElementById('content').scrollTop=0;
 }
+
+// Intercept the mobile/browser back gesture
+window.addEventListener('popstate', function(e){
+  // If the discard modal is open, close it and re-push state (stay on form)
+  if(document.getElementById('discard-modal').classList.contains('show')){
+    closeDiscardModal();
+    history.pushState({screen:'newjob', jobId:null}, '');
+    return;
+  }
+  // If we are on newjob with data, show the warning and re-push so we stay
+  if(currentScreen === 'newjob' && hasFormData()){
+    history.pushState({screen:'newjob', jobId:null}, '');
+    document.getElementById('discard-modal').classList.add('show');
+    return;
+  }
+  // Otherwise navigate back normally
+  _doGoBack();
+});
+
+// The topbar back button
 function goBack(){
   if(currentScreen === 'newjob' && hasFormData()){
     document.getElementById('discard-modal').classList.add('show');
     return;
   }
-  doGoBack();
+  // Pop the history entry we pushed, which will fire popstate → _doGoBack
+  history.back();
 }
-function doGoBack(){ navigate('dashboard'); editMode=false; currentJobId=null; }
-function confirmDiscard(){ document.getElementById('discard-modal').classList.remove('show'); doGoBack(); }
-function closeDiscardModal(){ document.getElementById('discard-modal').classList.remove('show'); }
+
+function _doGoBack(){
+  _renderScreen('dashboard');
+  history.replaceState({screen:'dashboard', jobId:null}, '');
+  editMode=false; currentJobId=null;
+}
+
+function confirmDiscard(){
+  document.getElementById('discard-modal').classList.remove('show');
+  _doGoBack();
+}
+function closeDiscardModal(){
+  document.getElementById('discard-modal').classList.remove('show');
+}
 
 function hasFormData(){
   const customer = document.getElementById('f-customer')?.value.trim();
