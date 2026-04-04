@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -213,6 +212,19 @@ textarea{resize:vertical;min-height:90px}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+/* CONFIRM MODAL */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,24,41,0.65);z-index:400;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:28px 24px 36px;width:100%;max-width:480px;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-icon{font-size:40px;text-align:center;margin-bottom:12px}
+.modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--dark);text-align:center;margin-bottom:8px}
+.modal-body{font-size:14px;color:var(--steel);text-align:center;margin-bottom:24px;line-height:1.6}
+.modal-actions{display:flex;flex-direction:column;gap:10px}
+.modal-btn-danger{width:100%;padding:15px;background:#c53030;color:#fff;border:none;border-radius:var(--r-sm);font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer}
+.modal-btn-cancel{width:100%;padding:15px;background:var(--steel-light);color:var(--dark);border:none;border-radius:var(--r-sm);font-size:15px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer}
+/* TECHNICIAN SETUP */
+.setup-badge{background:var(--blue-light);color:var(--blue);font-size:12px;font-weight:600;padding:4px 10px;border-radius:100px;display:inline-block;margin-bottom:12px}
 /* Labor description */
 .labor-desc-box{background:var(--blue-light);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:14px 16px;margin-top:8px}
 .labor-desc-box label{color:var(--blue-dark);font-weight:600;font-size:12px;margin-bottom:6px}
@@ -450,6 +462,56 @@ textarea{resize:vertical;min-height:90px}
     <div class="loading-text" id="loading-text">Processing...</div>
   </div>
   <div class="toast" id="toast"></div>
+
+  <!-- DISCARD WARNING MODAL -->
+  <div class="modal-overlay" id="discard-modal">
+    <div class="modal-sheet">
+      <div class="modal-icon">&#9888;&#65039;</div>
+      <div class="modal-title">Discard this job?</div>
+      <div class="modal-body">You have unsaved data entered.<br>Going back will lose all your progress on this estimate.</div>
+      <div class="modal-actions">
+        <button class="modal-btn-danger" onclick="confirmDiscard()">Yes, discard &amp; go back</button>
+        <button class="modal-btn-cancel" onclick="closeDiscardModal()">Keep editing</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TECHNICIAN PASSWORD SETUP MODAL -->
+  <div class="modal-overlay" id="setup-modal">
+    <div class="modal-sheet">
+      <div class="modal-icon">&#128272;</div>
+      <div class="modal-title">Set Your Password</div>
+      <div class="modal-body">
+        <span class="setup-badge">First time setup</span><br>
+        Welcome, <strong id="setup-name-label"></strong>!<br>Create a password to protect your account.
+      </div>
+      <div class="modal-actions">
+        <div style="margin-bottom:10px">
+          <input type="password" id="setup-pwd1" placeholder="New password" style="margin-bottom:8px" />
+          <input type="password" id="setup-pwd2" placeholder="Confirm password" />
+          <div id="setup-error" style="font-size:12px;color:#c53030;margin-top:6px;display:none"></div>
+        </div>
+        <button class="modal-btn-danger" style="background:var(--blue)" onclick="confirmSetupPassword()">Save Password &amp; Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TECHNICIAN PASSWORD LOGIN MODAL -->
+  <div class="modal-overlay" id="pwd-modal">
+    <div class="modal-sheet">
+      <div class="modal-icon">&#128119;</div>
+      <div class="modal-title">Enter Your Password</div>
+      <div class="modal-body">Welcome back, <strong id="pwd-name-label"></strong>!</div>
+      <div class="modal-actions">
+        <div style="margin-bottom:10px">
+          <input type="password" id="pwd-input" placeholder="Your password" />
+          <div id="pwd-error" style="font-size:12px;color:#c53030;margin-top:6px;display:none">Incorrect password. Try again.</div>
+        </div>
+        <button class="modal-btn-danger" style="background:var(--blue)" onclick="confirmTechPassword()">Sign In</button>
+        <button class="modal-btn-cancel" onclick="closePwdModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -488,17 +550,77 @@ function setLoginRole(role){
 function doLogin(){
   const name = document.getElementById('login-name').value.trim();
   if(!name){ showToastLogin('Please enter your name'); return; }
+  document.getElementById('login-error').classList.remove('show');
+
   if(loginRole==='admin'){
     const pwd = document.getElementById('login-password').value;
     if(pwd !== ADMIN_PASSWORD){
       document.getElementById('login-error').classList.add('show');
       return;
     }
+    currentUser = {name, role:'admin'};
+    DB.set('fp_session', currentUser);
+    startApp();
+    return;
   }
-  document.getElementById('login-error').classList.remove('show');
-  currentUser = {name, role: loginRole};
+
+  // Technician — check if they have a saved password
+  const techPasswords = DB.get('fp_tech_passwords', {});
+  const savedPwd = techPasswords[name.toLowerCase()];
+
+  if(!savedPwd){
+    // First time — show setup modal
+    _pendingLoginName = name;
+    document.getElementById('setup-name-label').textContent = name;
+    document.getElementById('setup-pwd1').value='';
+    document.getElementById('setup-pwd2').value='';
+    document.getElementById('setup-error').style.display='none';
+    document.getElementById('setup-modal').classList.add('show');
+  } else {
+    // Returning — show password prompt
+    _pendingLoginName = name;
+    document.getElementById('pwd-name-label').textContent = name;
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-error').style.display='none';
+    document.getElementById('pwd-modal').classList.add('show');
+    setTimeout(()=>document.getElementById('pwd-input').focus(),300);
+  }
+}
+
+let _pendingLoginName = '';
+
+function confirmSetupPassword(){
+  const p1 = document.getElementById('setup-pwd1').value;
+  const p2 = document.getElementById('setup-pwd2').value;
+  const errEl = document.getElementById('setup-error');
+  if(p1.length < 4){ errEl.textContent='Password must be at least 4 characters.'; errEl.style.display='block'; return; }
+  if(p1 !== p2){ errEl.textContent='Passwords do not match.'; errEl.style.display='block'; return; }
+  const techPasswords = DB.get('fp_tech_passwords', {});
+  techPasswords[_pendingLoginName.toLowerCase()] = p1;
+  DB.set('fp_tech_passwords', techPasswords);
+  document.getElementById('setup-modal').classList.remove('show');
+  currentUser = {name: _pendingLoginName, role:'technician'};
   DB.set('fp_session', currentUser);
   startApp();
+}
+
+function confirmTechPassword(){
+  const pwd = document.getElementById('pwd-input').value;
+  const techPasswords = DB.get('fp_tech_passwords', {});
+  const savedPwd = techPasswords[_pendingLoginName.toLowerCase()];
+  if(pwd !== savedPwd){
+    document.getElementById('pwd-error').style.display='block';
+    return;
+  }
+  document.getElementById('pwd-modal').classList.remove('show');
+  currentUser = {name: _pendingLoginName, role:'technician'};
+  DB.set('fp_session', currentUser);
+  startApp();
+}
+
+function closePwdModal(){
+  document.getElementById('pwd-modal').classList.remove('show');
+  _pendingLoginName = '';
 }
 
 function doLogout(){
@@ -753,7 +875,25 @@ function navigate(screen, jobId){
   }
   document.getElementById('content').scrollTop=0;
 }
-function goBack(){ navigate('dashboard'); editMode=false; currentJobId=null; }
+function goBack(){
+  if(currentScreen === 'newjob' && hasFormData()){
+    document.getElementById('discard-modal').classList.add('show');
+    return;
+  }
+  doGoBack();
+}
+function doGoBack(){ navigate('dashboard'); editMode=false; currentJobId=null; }
+function confirmDiscard(){ document.getElementById('discard-modal').classList.remove('show'); doGoBack(); }
+function closeDiscardModal(){ document.getElementById('discard-modal').classList.remove('show'); }
+
+function hasFormData(){
+  const customer = document.getElementById('f-customer')?.value.trim();
+  const location = document.getElementById('f-location')?.value.trim();
+  const labor    = document.getElementById('f-labor')?.value.trim();
+  const hasItems = workItems.some(w=>w.name||w.qty);
+  const hasMats  = materials.some(m=>m.name||m.qty);
+  return !!(customer || location || labor || hasItems || hasMats);
+}
 
 // ── DASHBOARD ──────────────────────────────────────────────────
 function getVisibleJobs(){
@@ -1108,6 +1248,10 @@ function renderDetail(jobId){
   const deleteBtn = currentUser?.role==='admin'
     ? `<button class="btn-danger" onclick="deleteJob('${job.id}')">Delete</button>`
     : '';
+  // Edit button hidden for technicians on approved jobs
+  const editBtn = (currentUser?.role==='technician' && job.status==='approved')
+    ? `<span style="font-size:12px;color:var(--steel-mid);padding:12px 4px;display:inline-flex;align-items:center;gap:4px">&#128274; Approved — locked</span>`
+    : `<button class="btn-outline" onclick="editJob('${job.id}')">Edit</button>`;
 
   document.getElementById('detail-content').innerHTML=`
     <div class="detail-header">
@@ -1138,7 +1282,7 @@ function renderDetail(jobId){
     </div>
     <div class="detail-section"><h3>Customer Signature</h3>${sigHtml}</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;padding:0 20px;margin-bottom:32px">
-      <button class="btn-outline" onclick="editJob('${job.id}')">Edit</button>
+      ${editBtn}
       ${job.status!=='approved'?`<button class="btn-outline" onclick="markApproved('${job.id}')">Approve</button>`:''}
       ${deleteBtn}
       <button class="btn-primary" style="flex:1;min-width:120px" onclick="generatePDF('${job.id}')">Download PDF</button>
