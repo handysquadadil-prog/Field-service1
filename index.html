@@ -746,8 +746,8 @@ function startApp(){
   seedDemo();
   history.replaceState({screen:'dashboard', jobId:null}, '');
   _renderScreen('dashboard');
-  // If Supabase already loaded by this point, kick off sync
-  if(_sb){ syncFromCloud(); subscribeRealtime(); }
+  // startSync handles the case where Supabase loaded before OR after login
+  startSync();
 }
 
 // ── SUPABASE CLIENT ────────────────────────────────────────────
@@ -758,29 +758,39 @@ function initSupabase(){
   try {
     if(!SUPABASE_URL.startsWith('http') || !SUPABASE_KEY || SUPABASE_KEY.length < 20) return;
     _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    console.log('Supabase connected ✓');
+    console.log('SB_READY: Supabase client created');
+    // If user already logged in (restored session), start sync now
     if(currentUser){
-      syncFromCloud();
-      subscribeRealtime();
+      console.log('SB_READY: user already logged in -> startSync');
+      startSync();
     }
-  } catch(e){ console.warn('Supabase init error:', e.message); }
+    // Otherwise startApp() calls startSync() after login
+  } catch(e){ console.error('SB_INIT_ERROR:', e.message); }
+}
+
+// Called once BOTH _sb and currentUser are confirmed ready
+function startSync(){
+  if(!_sb || !currentUser){ console.warn('startSync called but not ready', !!_sb, !!currentUser); return; }
+  console.log('SYNC_START: pulling cloud + subscribing realtime');
+  syncFromCloud();
+  subscribeRealtime();
 }
 
 // ── REAL-TIME SUBSCRIPTION ─────────────────────────────────────
-// Listens for INSERT / UPDATE / DELETE from any device and applies
-// changes immediately without a full refresh.
 function subscribeRealtime(){
   if(!_sb || _realtimeSub) return;
+  const channelName = 'hs-jobs-' + Date.now();
+  console.log('RT_SUBSCRIBE: channel', channelName);
   _realtimeSub = _sb
-    .channel('jobs-changes')
+    .channel(channelName)
     .on('postgres_changes',
       { event: '*', schema: 'public', table: 'jobs' },
       (payload) => {
+        console.log('RT_EVENT:', payload.eventType, payload.new?.id || payload.old?.id);
         const { eventType, new: row, old } = payload;
         if(eventType === 'DELETE'){
           jobs = jobs.filter(j => j.id !== old.id);
         } else {
-          // INSERT or UPDATE — only apply if this user can see it
           const job = cloudRowToJob(row);
           if(currentUser?.role === 'technician' && job.employeeName !== currentUser.name) return;
           const idx = jobs.findIndex(j => j.id === job.id);
@@ -791,15 +801,22 @@ function subscribeRealtime(){
         renderStats();
         renderJobList('dash');
         renderJobList('all');
-        // If detail screen is open for this job, refresh it too
-        if(currentScreen === 'detail' && currentJobId){
-          renderDetail(currentJobId);
-        }
+        if(currentScreen === 'detail' && currentJobId) renderDetail(currentJobId);
         setSyncStatus('ok');
+        showToast('Updated from another device');
       }
     )
-    .subscribe((status) => {
-      console.log('Realtime status:', status);
+    .subscribe((status, err) => {
+      console.log('RT_STATUS:', status, err||'');
+      if(status === 'SUBSCRIBED'){
+        console.log('RT_OK: realtime live');
+        setSyncStatus('ok');
+      }
+      if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+        console.warn('RT_FAIL: retrying in 5s');
+        _realtimeSub = null;
+        setTimeout(()=>{ if(currentUser && _sb) subscribeRealtime(); }, 5000);
+      }
     });
 }
 
